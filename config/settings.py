@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-iju0q&hh*h3_!#2gqqjnwztv5he36y*%2fzy(yii9fa&ki_lkh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = ["daniele.darkube.app", "localhost", "127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = ["https://daniele.darkube.app"]
 
 
 # Application definition
