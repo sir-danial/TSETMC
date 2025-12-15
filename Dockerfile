@@ -1,9 +1,27 @@
 FROM python:3.12-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-RUN pip install --no-cache-dir finpy_tse pandas
+# نصب وابستگی‌ها
+RUN pip install --no-cache-dir \
+    django \
+    gunicorn \
+    finpy_tse \
+    pandas \
+    numpy \
+    ta
 
-COPY test_tsetmc.py .
+# کپی پروژه
+COPY . .
 
-CMD ["python", "test_tsetmc.py"]
+# جمع‌آوری فایل‌های استاتیک (الان چیزی نداره ولی استاندارده)
+RUN python manage.py collectstatic --noinput || true
+
+# پورت مورد استفاده دارکوب
+EXPOSE 8000
+
+# اجرای سرور production
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
