@@ -1,32 +1,46 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 import math
 
+import numpy as np
 import pandas as pd
 
-from ta.trend import EMAIndicator, ADXIndicator
 from ta.momentum import RSIIndicator
+from ta.trend import EMAIndicator, ADXIndicator
 from ta.volatility import AverageTrueRange
 
+# اگر نام تابع دیتاپرووایدر شما فرق دارد، فقط این import را مطابق پروژه خودت درست کن
+from core.data_providers.finpy_provider import fetch_daily_history
 
-# =========================
-# Helpers
-# =========================
 
+# ---------------------------
+# Helpers: JSON-safe casting
+# ---------------------------
 def _f(x: Any, default: float = 0.0) -> float:
-    """Safe float for numpy/pandas scalars."""
     try:
         if x is None:
             return float(default)
+        if isinstance(x, (np.floating, np.integer)):
+            return float(x)
         if isinstance(x, (pd.Timestamp,)):
             return float(default)
-        v = float(x)
-        if math.isnan(v) or math.isinf(v):
+        if isinstance(x, float) and (math.isnan(x) or math.isinf(x)):
             return float(default)
-        return v
+        return float(x)
     except Exception:
         return float(default)
+
+
+def _i(x: Any, default: int = 0) -> int:
+    try:
+        if x is None:
+            return int(default)
+        if isinstance(x, (np.integer,)):
+            return int(x)
+        return int(float(x))
+    except Exception:
+        return int(default)
 
 
 def _s(x: Any, default: str = "") -> str:
@@ -38,77 +52,32 @@ def _s(x: Any, default: str = "") -> str:
         return default
 
 
-def _json_safe(obj: Any) -> Any:
-    """
-    Django JsonResponse sometimes chokes on numpy.bool_ / numpy types.
-    This makes everything JSON-serializable.
-    """
-    # primitives
-    if obj is None or isinstance(obj, (str, int, float, bool)):
-        return obj
-
-    # pandas/numpy scalars
-    if hasattr(obj, "item"):
-        try:
-            return _json_safe(obj.item())
-        except Exception:
-            pass
-
-    # dict
-    if isinstance(obj, dict):
-        return {str(k): _json_safe(v) for k, v in obj.items()}
-
-    # list/tuple
-    if isinstance(obj, (list, tuple, set)):
-        return [_json_safe(x) for x in obj]
-
-    # fallback
-    return str(obj)
+def _clip(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
 
 
-# =========================
-# Data Fetch
-# =========================
-
-def _fetch_history(symbol: str) -> Optional[pd.DataFrame]:
-    """
-    Expected output columns (minimum):
-      Date (optional), Open, High, Low, Close
-    If you already have provider: core.data_providers.finpy_provider.fetch_daily_history
-    we use it.
-    """
-    try:
-        from core.data_providers.finpy_provider import fetch_daily_history
-        df = fetch_daily_history(symbol)
-        return df
-    except Exception:
-        return None
-
-
-# =========================
-# Indicators
-# =========================
-
-def _calc_supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> Tuple[pd.Series, pd.Series]:
+# ---------------------------
+# SuperTrend (simple)
+# ---------------------------
+def _supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> Tuple[pd.Series, pd.Series]:
     """
     Returns:
-      supertrend_line (float Series)
-      supertrend_dir (int Series: +1 up, -1 down)
+      st: SuperTrend line
+      direction: 1 (bullish) / -1 (bearish)
     """
     high = df["High"].astype(float)
     low = df["Low"].astype(float)
     close = df["Close"].astype(float)
 
-    atr = AverageTrueRange(high, low, close, window=period).average_true_range()
-
+    atr = AverageTrueRange(high=high, low=low, close=close, window=period).average_true_range()
     hl2 = (high + low) / 2.0
     upperband = hl2 + multiplier * atr
     lowerband = hl2 - multiplier * atr
 
-    st = pd.Series(index=df.index, dtype="float64")
-    direction = pd.Series(index=df.index, dtype="int64")
+    st = pd.Series(index=df.index, dtype=float)
+    direction = pd.Series(index=df.index, dtype=int)
 
-    # initialize
+    # init
     st.iloc[0] = upperband.iloc[0]
     direction.iloc[0] = 1
 
@@ -116,287 +85,390 @@ def _calc_supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0
         prev_st = st.iloc[i - 1]
         prev_dir = direction.iloc[i - 1]
 
-        cur_ub = upperband.iloc[i]
-        cur_lb = lowerband.iloc[i]
-        prev_ub = upperband.iloc[i - 1]
-        prev_lb = lowerband.iloc[i - 1]
+        curr_upper = upperband.iloc[i]
+        curr_lower = lowerband.iloc[i]
+        prev_upper = upperband.iloc[i - 1]
+        prev_lower = lowerband.iloc[i - 1]
 
-        # final upper/lower band
-        final_ub = cur_ub if (cur_ub < prev_ub or close.iloc[i - 1] > prev_ub) else prev_ub
-        final_lb = cur_lb if (cur_lb > prev_lb or close.iloc[i - 1] < prev_lb) else prev_lb
+        # bands "final"
+        if curr_upper > prev_upper and close.iloc[i - 1] <= prev_upper:
+            curr_upper = prev_upper
+        if curr_lower < prev_lower and close.iloc[i - 1] >= prev_lower:
+            curr_lower = prev_lower
 
-        # direction switch logic
-        if prev_dir == 1:
-            if close.iloc[i] < final_lb:
-                cur_dir = -1
-            else:
-                cur_dir = 1
+        # direction
+        if prev_st == prev_upper:
+            curr_dir = 1 if close.iloc[i] > curr_upper else -1
         else:
-            if close.iloc[i] > final_ub:
-                cur_dir = 1
-            else:
-                cur_dir = -1
+            curr_dir = -1 if close.iloc[i] < curr_lower else 1
 
-        direction.iloc[i] = cur_dir
-        st.iloc[i] = final_lb if cur_dir == 1 else final_ub
+        direction.iloc[i] = curr_dir
+        st.iloc[i] = curr_lower if curr_dir == 1 else curr_upper
 
     return st, direction
 
 
-def _structure_state(close: pd.Series, pivot: int = 3) -> Dict[str, Any]:
+# ---------------------------
+# Structure (very light)
+# ---------------------------
+def _market_structure(df: pd.DataFrame, lookback: int = 40) -> Dict[str, Any]:
     """
-    Very light "market structure" heuristic:
-    - detect recent swing highs/lows with small pivot window
-    - compare last two highs and lows => HH/HL or LH/LL
+    Very lightweight HH/HL/LH/LL detection using recent swing approximation.
+    Output is JSON-safe.
     """
-    c = close.astype(float).reset_index(drop=True)
-    n = len(c)
-    if n < pivot * 2 + 5:
+    close = df["Close"].astype(float)
+    high = df["High"].astype(float)
+    low = df["Low"].astype(float)
+
+    if len(df) < lookback + 5:
         return {"state": "unknown", "hh": False, "hl": False, "lh": False, "ll": False}
 
-    highs = []
-    lows = []
+    w = min(lookback, len(df) - 1)
+    h = high.tail(w).reset_index(drop=True)
+    l = low.tail(w).reset_index(drop=True)
 
-    for i in range(pivot, n - pivot):
-        window = c.iloc[i - pivot:i + pivot + 1]
-        if c.iloc[i] == window.max():
-            highs.append((i, float(c.iloc[i])))
-        if c.iloc[i] == window.min():
-            lows.append((i, float(c.iloc[i])))
+    # pick "recent extremes" in two halves to estimate swing
+    mid = w // 2
+    h1, h2 = float(h.iloc[:mid].max()), float(h.iloc[mid:].max())
+    l1, l2 = float(l.iloc[:mid].min()), float(l.iloc[mid:].min())
 
-    if len(highs) < 2 or len(lows) < 2:
-        return {"state": "unknown", "hh": False, "hl": False, "lh": False, "ll": False}
+    hh = h2 > h1
+    ll = l2 < l1
+    hl = l2 > l1
+    lh = h2 < h1
 
-    h1, h2 = highs[-2], highs[-1]
-    l1, l2 = lows[-2], lows[-1]
-
-    hh = h2[1] > h1[1]
-    lh = h2[1] < h1[1]
-    hl = l2[1] > l1[1]
-    ll = l2[1] < l1[1]
-
+    # infer state
     if hh and hl:
-        state = "bullish"
-    elif lh and ll:
-        state = "bearish"
+        state = "uptrend"
+    elif ll and lh:
+        state = "downtrend"
     else:
-        state = "mixed"
+        state = "range"
 
-    return {"state": state, "hh": hh, "hl": hl, "lh": lh, "ll": ll}
+    return {"state": state, "hh": bool(hh), "hl": bool(hl), "lh": bool(lh), "ll": bool(ll)}
 
 
-def _ema_slope_percent_per_bar(ema: pd.Series, bars: int = 20) -> float:
-    """
-    slope of EMA in percent per bar, using simple linear approx:
-      (ema_last - ema_prev) / ema_prev * 100 / bars
-    """
-    if len(ema) < bars + 1:
+def _slope_percent_per_bar(series: pd.Series, window: int = 30) -> float:
+    s = series.astype(float).dropna()
+    if len(s) < window:
         return 0.0
-    last = float(ema.iloc[-1])
-    prev = float(ema.iloc[-(bars + 1)])
-    if prev == 0:
-        return 0.0
-    return ((last - prev) / prev) * 100.0 / float(bars)
+    y = s.tail(window).values
+    x = np.arange(len(y))
+    # simple linear regression slope
+    denom = (x.var() if x.var() != 0 else 1.0)
+    slope = np.cov(x, y, bias=True)[0, 1] / denom
+    last = float(y[-1]) if float(y[-1]) != 0 else 1.0
+    return (slope / last) * 100.0
 
 
-# =========================
-# Main Analyzer
-# =========================
+# ---------------------------
+# Score engine
+# ---------------------------
+def _score_engine(
+    *,
+    last_price: float,
+    e20: float,
+    e50: float,
+    e100: float,
+    slope_pct: float,
+    adx: float,
+    pdi: float,
+    mdi: float,
+    rsi: float,
+    struct: Dict[str, Any],
+    rr: float,
+    atr_pct: float,
+    st_dir: int,
+) -> Tuple[int, str, List[str], Dict[str, float]]:
+    """
+    Returns: (score_0_100, recommendation, reasons[], component_scores)
+    """
+    reasons: List[str] = []
+    comp: Dict[str, float] = {}
 
+    # 1) Trend (30)
+    trend_score = 0.0
+    ema_bull = (e20 > e50 > e100)
+    ema_bear = (e20 < e50 < e100)
+
+    if ema_bull:
+        trend_score += 16
+        reasons.append("EMA20 بالاتر از EMA50 و EMA100 است (روند کلی صعودی).")
+    elif ema_bear:
+        trend_score += 6
+        reasons.append("EMA20 پایین‌تر از EMA50 و EMA100 است (روند کلی نزولی).")
+    else:
+        trend_score += 10
+        reasons.append("EMAها هم‌راستا نیستند (بازار می‌تواند رنج/درحال تغییر فاز باشد).")
+
+    if slope_pct > 0.03:
+        trend_score += 7
+        reasons.append("شیب قیمت مثبت است (شتاب رشد قابل قبول).")
+    elif slope_pct < -0.03:
+        trend_score += 2
+        reasons.append("شیب قیمت منفی است (ریسک ادامه افت).")
+    else:
+        trend_score += 4
+        reasons.append("شیب قیمت کم است (حرکت کند/رنج).")
+
+    if adx >= 25:
+        trend_score += 7
+        reasons.append(f"ADX حدود {round(adx, 1)} است (روند معتبر/قوی).")
+    elif adx >= 20:
+        trend_score += 5
+        reasons.append(f"ADX حدود {round(adx, 1)} است (روند متوسط).")
+    else:
+        trend_score += 2
+        reasons.append(f"ADX حدود {round(adx, 1)} است (روند ضعیف/رنج).")
+
+    trend_score = _clip(trend_score, 0, 30)
+    comp["trend"] = trend_score
+
+    # 2) Momentum (25)
+    mom_score = 0.0
+    if 50 <= rsi <= 65:
+        mom_score += 18
+        reasons.append("RSI در محدوده مناسب (۵۰ تا ۶۵) است.")
+    elif 65 < rsi <= 75:
+        mom_score += 12
+        reasons.append("RSI بالاتر از ۶۵ است (قدرت خرید خوب، اما نزدیک اشباع).")
+    elif rsi > 75:
+        mom_score += 6
+        reasons.append("RSI خیلی بالا است (احتمال اصلاح/فشار فروش کوتاه‌مدت).")
+    elif 35 <= rsi < 50:
+        mom_score += 10
+        reasons.append("RSI زیر ۵۰ است (قدرت خرید متوسط/ضعیف).")
+    else:
+        mom_score += 7
+        reasons.append("RSI پایین است (می‌تواند فرصت برگشت باشد اما پرریسک).")
+
+    # DI direction bonus
+    if pdi > mdi:
+        mom_score += 5
+        reasons.append("+DI بالاتر از -DI است (غلبه قدرت خرید).")
+    else:
+        mom_score += 2
+        reasons.append("-DI بالاتر از +DI است (غلبه قدرت فروش).")
+
+    # Supertrend direction bonus
+    if st_dir == 1:
+        mom_score += 2
+        reasons.append("سوپرترند در فاز صعودی است.")
+    else:
+        mom_score += 0
+        reasons.append("سوپرترند در فاز نزولی است.")
+
+    mom_score = _clip(mom_score, 0, 25)
+    comp["momentum"] = mom_score
+
+    # 3) Structure (20)
+    struct_score = 0.0
+    state = _s(struct.get("state"))
+    hh = bool(struct.get("hh"))
+    hl = bool(struct.get("hl"))
+    lh = bool(struct.get("lh"))
+    ll = bool(struct.get("ll"))
+
+    if state == "uptrend" and hh and hl:
+        struct_score += 18
+        reasons.append("ساختار بازار HH/HL دارد (روند ساختاری صعودی).")
+    elif state == "downtrend" and ll and lh:
+        struct_score += 6
+        reasons.append("ساختار بازار LL/LH دارد (روند ساختاری نزولی).")
+    else:
+        struct_score += 12
+        reasons.append("ساختار بازار رنج/نامشخص است (به شکست سطح‌ها حساس).")
+
+    struct_score = _clip(struct_score, 0, 20)
+    comp["structure"] = struct_score
+
+    # 4) Risk/Reward (15)
+    rr_score = 0.0
+    if rr >= 2.0:
+        rr_score += 15
+        reasons.append(f"نسبت ریسک به بازده مناسب است (R/R≈{round(rr, 2)}).")
+    elif rr >= 1.5:
+        rr_score += 11
+        reasons.append(f"نسبت ریسک به بازده متوسط است (R/R≈{round(rr, 2)}).")
+    elif rr >= 1.2:
+        rr_score += 7
+        reasons.append(f"نسبت ریسک به بازده ضعیف است (R/R≈{round(rr, 2)}).")
+    else:
+        rr_score += 4
+        reasons.append(f"نسبت ریسک به بازده پایین است (R/R≈{round(rr, 2)}).")
+
+    rr_score = _clip(rr_score, 0, 15)
+    comp["rr"] = rr_score
+
+    # 5) Volatility (10) - ATR%
+    vol_score = 0.0
+    # ATR% = ATR / price * 100
+    if atr_pct <= 2.0:
+        vol_score += 9
+        reasons.append("نوسان (ATR%) پایین/مناسب است (ریسک کنترل‌شده).")
+    elif atr_pct <= 4.0:
+        vol_score += 7
+        reasons.append("نوسان (ATR%) متوسط است.")
+    elif atr_pct <= 6.0:
+        vol_score += 5
+        reasons.append("نوسان (ATR%) بالاست (ریسک افزایش می‌یابد).")
+    else:
+        vol_score += 3
+        reasons.append("نوسان (ATR%) خیلی بالاست (معامله بسیار پرریسک).")
+
+    vol_score = _clip(vol_score, 0, 10)
+    comp["volatility"] = vol_score
+
+    # total score
+    total = trend_score + mom_score + struct_score + rr_score + vol_score
+    score = int(round(_clip(total, 0, 100)))
+
+    # Recommendation
+    # Base by score, then adjust by trend direction (ema + supertrend)
+    if score >= 75 and (ema_bull or st_dir == 1):
+        rec = "buy"
+        reasons.append("امتیاز کلی بالا است و شرایط کلی به نفع خرید است.")
+    elif score <= 45 and (ema_bear or st_dir == -1):
+        rec = "sell"
+        reasons.append("امتیاز کلی پایین است و شرایط کلی به نفع فروش/اجتناب است.")
+    else:
+        rec = "hold"
+        reasons.append("امتیاز کلی متوسط است (بهتر است منتظر تایید بیشتر بمانید).")
+
+    return score, rec, reasons, comp
+
+
+# ---------------------------
+# Main public function
+# ---------------------------
 def analyze_symbol(symbol: str) -> Dict[str, Any]:
     symbol = (symbol or "").strip()
     if not symbol:
         return {"error": "symbol is required"}
 
-    df = _fetch_history(symbol)
+    df = fetch_daily_history(symbol)
     if df is None or df.empty:
         return {"error": "no data"}
 
-    # Normalize expected columns
-    for col in ["Open", "High", "Low", "Close"]:
-        if col not in df.columns:
-            return {"error": f"missing column: {col}"}
+    # Keep last 300 bars for stability/perf
+    df = df.tail(300).copy().reset_index(drop=True)
 
-    # limit
-    df = df.tail(300).reset_index(drop=True)
+    # Ensure columns exist
+    required_cols = {"Open", "High", "Low", "Close"}
+    if not required_cols.issubset(set(df.columns)):
+        return {"error": "bad data columns", "columns": list(df.columns)}
 
+    # Use raw close for decision/display
     close = df["Close"].astype(float)
     high = df["High"].astype(float)
     low = df["Low"].astype(float)
 
-    last_price = float(close.iloc[-1])
+    last_price = _f(close.iloc[-1])
 
-    # ============ Lookbacks (keep for transparency) ============
-    lookbacks = {
-        "history_bars_used": int(len(df)),
-        "rsi": 14,
-        "adx": 14,
-        "atr": 14,
-        "ema20": 20,
-        "ema50": 50,
-        "ema100": 100,
-        "supertrend_period": 10,
-        "supertrend_multiplier": 3.0,
-        "slope_bars": 20,
-        "return_window_bars": 60,   # برای بازده تقریبی (مثلاً ~3 ماه کاری)
-    }
+    # Indicators
+    ema20 = EMAIndicator(close=close, window=20).ema_indicator()
+    ema50 = EMAIndicator(close=close, window=50).ema_indicator()
+    ema100 = EMAIndicator(close=close, window=100).ema_indicator()
 
-    # ============ Indicators ============
-    e20_series = EMAIndicator(close, window=20).ema_indicator()
-    e50_series = EMAIndicator(close, window=50).ema_indicator()
-    e100_series = EMAIndicator(close, window=100).ema_indicator()
+    rsi_series = RSIIndicator(close=close, window=14).rsi()
 
-    e20 = _f(e20_series.iloc[-1])
-    e50 = _f(e50_series.iloc[-1])
-    e100 = _f(e100_series.iloc[-1])
+    adx_ind = ADXIndicator(high=high, low=low, close=close, window=14)
+    adx = adx_ind.adx()
+    pdi = adx_ind.adx_pos()
+    mdi = adx_ind.adx_neg()
 
-    rsi_series = RSIIndicator(close, window=lookbacks["rsi"]).rsi()
+    atr_series = AverageTrueRange(high=high, low=low, close=close, window=14).average_true_range()
+
+    st, st_dir = _supertrend(df, period=10, multiplier=3.0)
+
+    # latest values
+    e20 = _f(ema20.iloc[-1])
+    e50 = _f(ema50.iloc[-1])
+    e100 = _f(ema100.iloc[-1])
     rsi = _f(rsi_series.iloc[-1])
-
-    adx_ind = ADXIndicator(high, low, close, window=lookbacks["adx"])
-    adx_series = adx_ind.adx()
-    pdi_series = adx_ind.adx_pos()
-    mdi_series = adx_ind.adx_neg()
-
-    adx_last = _f(adx_series.iloc[-1])
-    pdi_last = _f(pdi_series.iloc[-1])
-    mdi_last = _f(mdi_series.iloc[-1])
-
-    atr_series = AverageTrueRange(high, low, close, window=lookbacks["atr"]).average_true_range()
+    adx_last = _f(adx.iloc[-1])
+    pdi_last = _f(pdi.iloc[-1])
+    mdi_last = _f(mdi.iloc[-1])
     atr_last = _f(atr_series.iloc[-1])
+    st_last = _f(st.iloc[-1])
+    st_dir_last = _i(st_dir.iloc[-1], default=1)
 
-    st_line, st_dir = _calc_supertrend(df, period=lookbacks["supertrend_period"], multiplier=lookbacks["supertrend_multiplier"])
-    st_last = _f(st_line.iloc[-1])
-    st_dir_last = int(_f(st_dir.iloc[-1], 1))  # +1 or -1
+    # Slope (last 30 bars)
+    slope_pct = _f(_slope_percent_per_bar(close, window=30))
 
-    slope_pct = _f(_ema_slope_percent_per_bar(e20_series, bars=lookbacks["slope_bars"]))
+    # Structure
+    struct = _market_structure(df, lookback=40)
 
-    struct = _structure_state(close)
-
-    # ============ Trend ============
-    ema_trend_up = (e20 > e50 > e100)
-    ema_trend_down = (e20 < e50 < e100)
-
-    if ema_trend_up:
+    # Trend label (simple)
+    if e20 > e50 > e100:
         trend = "up"
-    elif ema_trend_down:
+    elif e20 < e50 < e100:
         trend = "down"
     else:
         trend = "range"
 
-    # ============ Return (keep your previous style) ============
-    # return_percent based on return_window_bars
-    ret_window = int(lookbacks["return_window_bars"])
-    if len(close) > ret_window:
-        base = float(close.iloc[-(ret_window + 1)])
-        return_percent = ((last_price - base) / base * 100.0) if base else 0.0
+    # Stop/TP (keep simple & consistent)
+    atr_pct = (atr_last / last_price * 100.0) if last_price > 0 else 0.0
+
+    # Default: use SuperTrend as protective line when possible
+    if trend == "up" or st_dir_last == 1:
+        stop_loss = min(st_last, last_price - 2.0 * atr_last)
+        take_profit = last_price + 2.0 * atr_last
+    elif trend == "down" or st_dir_last == -1:
+        # for "sell" idea: stop above
+        stop_loss = max(st_last, last_price + 2.0 * atr_last)
+        take_profit = max(0.0, last_price - 2.0 * atr_last)
     else:
-        return_percent = 0.0
+        stop_loss = last_price - 2.0 * atr_last
+        take_profit = last_price + 2.0 * atr_last
 
-    # ============ Risk / Targets ============
-    # ساده و قابل‌فهم: SL=1.5ATR / TP=2ATR
-    stop_loss = last_price - (1.5 * atr_last)
-    take_profit = last_price + (2.0 * atr_last)
+    stop_loss = _f(stop_loss)
+    take_profit = _f(take_profit)
 
-    risk_percent = ((last_price - stop_loss) / last_price * 100.0) if last_price else 0.0
+    # Risk percent (distance to stop)
+    risk_percent = 0.0
+    if last_price > 0:
+        risk_percent = abs((last_price - stop_loss) / last_price) * 100.0
 
-    # ============ Recommendation ============
-    # منطق پایه (همون سبک قبلی) + آماده برای شفاف‌سازی با reasons
-    # buy: trend up + adx strong + supertrend up + rsi not overbought
-    # sell: trend down + adx strong + supertrend down
-    if trend == "up" and adx_last >= 25 and st_dir_last == 1 and rsi < 70:
-        recommendation = "buy"
-    elif trend == "down" and adx_last >= 25 and st_dir_last == -1:
-        recommendation = "sell"
-    else:
-        recommendation = "neutral"
+    # RR ratio
+    reward = abs(take_profit - last_price)
+    risk = abs(last_price - stop_loss)
+    rr = (reward / risk) if risk > 0 else 0.0
 
-    # =========================
-    # ✅ Reasons (NEW)
-    # =========================
-    reasons = []
+    # Score engine
+    score, recommendation, reasons, comp_scores = _score_engine(
+        last_price=last_price,
+        e20=e20,
+        e50=e50,
+        e100=e100,
+        slope_pct=slope_pct,
+        adx=adx_last,
+        pdi=pdi_last,
+        mdi=mdi_last,
+        rsi=rsi,
+        struct=struct,
+        rr=rr,
+        atr_pct=atr_pct,
+        st_dir=st_dir_last,
+    )
 
-    # EMA alignment
-    if ema_trend_up:
-        reasons.append("EMA20 بالای EMA50 و EMA50 بالای EMA100 است (چیدمان صعودی).")
-    elif ema_trend_down:
-        reasons.append("EMA20 پایین EMA50 و EMA50 پایین EMA100 است (چیدمان نزولی).")
-    else:
-        reasons.append("چیدمان EMAها یک‌دست نیست (احتمالاً بازار رنج/نامطمئن).")
+    # Keep return_percent as earlier placeholder (0) unless you already compute it elsewhere
+    return_percent = 0.0
 
-    # ADX strength
-    if adx_last >= 25:
-        reasons.append("قدرت روند مناسب است (ADX بالای ۲۵).")
-    else:
-        reasons.append("قدرت روند ضعیف است (ADX زیر ۲۵).")
-
-    # DI dominance
-    if pdi_last > mdi_last:
-        reasons.append("قدرت خریداران بیشتر است (+DI > -DI).")
-    elif mdi_last > pdi_last:
-        reasons.append("قدرت فروشندگان بیشتر است (-DI > +DI).")
-    else:
-        reasons.append("قدرت خریدار و فروشنده نزدیک به هم است (+DI ≈ -DI).")
-
-    # SuperTrend
-    if st_dir_last == 1:
-        reasons.append("SuperTrend صعودی است.")
-    else:
-        reasons.append("SuperTrend نزولی است.")
-
-    # RSI warnings
-    if rsi >= 70:
-        reasons.append("هشدار: RSI در محدوده اشباع خرید است (بالای ۷۰).")
-    elif rsi <= 30:
-        reasons.append("هشدار: RSI در محدوده اشباع فروش است (زیر ۳۰).")
-    else:
-        reasons.append("RSI در محدوده نرمال است.")
-
-    # Structure
-    st_state = _s(struct.get("state"))
-    if st_state == "bullish":
-        reasons.append("ساختار بازار صعودی است (HH و HL).")
-    elif st_state == "bearish":
-        reasons.append("ساختار بازار نزولی است (LH و LL).")
-    elif st_state == "mixed":
-        reasons.append("ساختار بازار ترکیبی/نامشخص است.")
-    else:
-        reasons.append("ساختار بازار قابل تشخیص نبود (داده/پیوت کافی نیست).")
-
-    # Slope
-    if slope_pct > 0:
-        reasons.append(f"شیب EMA20 مثبت است (~{slope_pct:.4f}% به‌ازای هر کندل).")
-    elif slope_pct < 0:
-        reasons.append(f"شیب EMA20 منفی است (~{slope_pct:.4f}% به‌ازای هر کندل).")
-    else:
-        reasons.append("شیب EMA20 نزدیک به صفر است.")
-
-    # Final reason
-    if recommendation == "buy":
-        reasons.append("جمع‌بندی: ترکیب روند/قدرت/سوپرترند به نفع خرید است.")
-    elif recommendation == "sell":
-        reasons.append("جمع‌بندی: ترکیب روند/قدرت/سوپرترند به نفع فروش است.")
-    else:
-        reasons.append("جمع‌بندی: سیگنال قطعی نیست (بهتر است منتظر تأیید بمانیم).")
-
-    # =========================
-    # Output (KEEP EVERYTHING + add reasons)
-    # =========================
-    out = {
+    # IMPORTANT: JSON-safe output
+    out: Dict[str, Any] = {
         "symbol": symbol,
-        "last_price": round(_f(last_price), 2),
+        "last_price": round(last_price, 2),
         "trend": trend,
-        "rsi": round(_f(rsi), 2),
-        "return_percent": round(_f(return_percent), 2),
+        "rsi": round(rsi, 2),
         "risk_percent": round(_f(risk_percent), 2),
-        "stop_loss": round(_f(stop_loss), 2),
-        "take_profit": round(_f(take_profit), 2),
-        "recommendation": recommendation,
-
-        # ✅ NEW
-        "reasons": reasons,
-
-        # metrics (for later charts) - KEEP
+        "return_percent": round(_f(return_percent), 2),
+        "stop_loss": round(stop_loss, 2),
+        "take_profit": round(take_profit, 2),
+        "recommendation": recommendation,   # buy/sell/hold
+        "score": _i(score),
+        "reasons": [_s(r) for r in reasons],
+        # metrics (for later charts / debugging)
         "metrics": {
             "ema20": round(_f(e20), 2),
             "ema50": round(_f(e50), 2),
@@ -407,7 +479,10 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
             "supertrend_dir": int(st_dir_last),
             "supertrend": round(_f(st_last), 2),
             "atr": round(_f(atr_last), 2),
+            "atr_percent": round(_f(atr_pct), 2),
             "slope_percent_per_bar": round(_f(slope_pct), 4),
+            "rr": round(_f(rr), 2),
+            "score_components": {k: round(_f(v), 2) for k, v in comp_scores.items()},
             "structure": {
                 "state": _s(struct.get("state")),
                 "hh": bool(struct.get("hh")),
@@ -416,9 +491,19 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
                 "ll": bool(struct.get("ll")),
             },
         },
-
-        # keep lookbacks
-        "lookbacks": lookbacks,
+        "lookbacks": {
+            "data_tail_bars": 300,
+            "rsi": 14,
+            "adx": 14,
+            "atr": 14,
+            "ema20": 20,
+            "ema50": 50,
+            "ema100": 100,
+            "supertrend_period": 10,
+            "supertrend_multiplier": 3.0,
+            "slope_window": 30,
+            "structure_lookback": 40,
+        },
     }
 
-    return _json_safe(out)
+    return out

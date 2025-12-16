@@ -63,6 +63,18 @@
         .buy { color: #22c55e; }
         .sell { color: #ef4444; }
         .neutral { color: #eab308; }
+
+        .muted { color:#94a3b8; font-size: 13px; }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid #1e293b;
+            padding: 10px 0;
+        }
+        .row:last-child { border-bottom: none; }
+        .k { color:#94a3b8; }
+        .v { font-weight: bold; }
     </style>
 </head>
 
@@ -72,74 +84,119 @@
     <h2>📊 تحلیل نماد بورس تهران</h2>
 
     <form id="analyze-form">
-        <input id="symbol-input" type="text" placeholder="مثلاً: فملی" required>
-        <button type="submit">تحلیل کن</button>
+        <input id="symbol-input" type="text" name="symbol" placeholder="مثلاً: فملی" required>
+        <button id="analyze-btn" type="submit">تحلیل کن</button>
     </form>
 
     <div id="result" class="card" style="display:none;"></div>
 </div>
 
 <script>
-document.getElementById("analyze-form").addEventListener("submit", function (e) {
-    e.preventDefault();
+(function () {
+    const form = document.getElementById("analyze-form");
+    const input = document.getElementById("symbol-input");
+    const btn = document.getElementById("analyze-btn");
+    const result = document.getElementById("result");
 
-    const symbol = document.getElementById("symbol-input").value.trim();
-    if (!symbol) return;
+    function trendFa(t) {
+        if (t === "up") return "صعودی";
+        if (t === "down") return "نزولی";
+        return "رنج";
+    }
 
-    const resultBox = document.getElementById("result");
-    resultBox.style.display = "block";
-    resultBox.innerHTML = "⏳ در حال دریافت تحلیل...";
+    function recFa(r) {
+        if (r === "buy") return { text: "خرید", cls: "buy", color: "#22c55e" };
+        if (r === "sell") return { text: "فروش", cls: "sell", color: "#ef4444" };
+        return { text: "نگهداری", cls: "neutral", color: "#eab308" };
+    }
 
-    fetch(`/api/analyze/?symbol=${encodeURIComponent(symbol)}`)
-        .then(res => res.json())
-        .then(data => {
+    function nf(x) {
+        // اگر عدد بود با جداکننده هزار نمایش بده
+        const n = Number(x);
+        if (!Number.isFinite(n)) return String(x ?? "");
+        return n.toLocaleString("fa-IR");
+    }
 
-            let recColor = "#eab308";
-            let recText = "نگهداری";
+    async function analyze(symbol) {
+        const url = `/api/analyze/?symbol=${encodeURIComponent(symbol)}`;
+        const res = await fetch(url, { method: "GET" });
 
-            if (data.recommendation === "buy") {
-                recColor = "#22c55e";
-                recText = "خرید";
-            }
-            if (data.recommendation === "sell") {
-                recColor = "#ef4444";
-                recText = "فروش";
-            }
+        // اگر بک خطا داد
+        if (!res.ok) {
+            throw new Error("HTTP " + res.status);
+        }
 
-            let reasonsHtml = "";
-            if (Array.isArray(data.reasons)) {
-                reasonsHtml = data.reasons.map(r => `<li>${r}</li>`).join("");
-            }
+        const data = await res.json();
 
-            resultBox.innerHTML = `
-                <h3>نماد: ${data.symbol}</h3>
+        // اگر API پیام error داشت
+        if (data && data.error) {
+            throw new Error(data.error);
+        }
 
-                <p>📌 قیمت آخر: <b>${data.last_price}</b></p>
-                <p>📈 روند بازار: <b>${data.trend === "up" ? "صعودی" : data.trend === "down" ? "نزولی" : "رنج"}</b></p>
-                <p>📊 RSI: <b>${data.rsi}</b></p>
-                <p>⚠️ درصد ریسک: <b>${data.risk_percent}%</b></p>
-                <p>🛑 حد ضرر: <b>${data.stop_loss}</b></p>
-                <p>🎯 حد سود: <b>${data.take_profit}</b></p>
+        return data;
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const symbol = (input.value || "").trim();
+        if (!symbol) return;
+
+        // UI loading
+        btn.disabled = true;
+        btn.textContent = "در حال تحلیل...";
+        result.style.display = "block";
+        result.innerHTML = `<p class="muted">در حال دریافت تحلیل برای <b>${symbol}</b> ...</p>`;
+
+        try {
+            const data = await analyze(symbol);
+
+            const rec = recFa(data.recommendation);
+            const reasons = Array.isArray(data.reasons) ? data.reasons : [];
+
+            const reasonsHtml = reasons.length
+                ? `<ul style="padding-right:18px; line-height:1.9; margin: 8px 0 0;">
+                        ${reasons.map(r => `<li>${r}</li>`).join("")}
+                   </ul>`
+                : `<p class="muted" style="margin:8px 0 0;">دلیلی برای نمایش موجود نیست.</p>`;
+
+            result.innerHTML = `
+                <h3 style="margin:0 0 10px;">نماد: ${data.symbol}</h3>
+
+                <div class="row"><div class="k">قیمت آخر</div><div class="v">${nf(data.last_price)}</div></div>
+                <div class="row"><div class="k">روند بازار</div><div class="v">${trendFa(data.trend)}</div></div>
+                <div class="row"><div class="k">RSI</div><div class="v">${nf(data.rsi)}</div></div>
+                <div class="row"><div class="k">درصد ریسک</div><div class="v">${nf(data.risk_percent)}%</div></div>
+                <div class="row"><div class="k">حد ضرر</div><div class="v">${nf(data.stop_loss)}</div></div>
+                <div class="row"><div class="k">حد سود</div><div class="v">${nf(data.take_profit)}</div></div>
+                <div class="row"><div class="k">امتیاز (Score)</div><div class="v">${nf(data.score)}</div></div>
 
                 <hr style="margin:16px 0;border-color:#1e293b">
 
-                <h4>🧠 دلایل تحلیل:</h4>
-                <ul style="padding-right:18px; line-height:1.9">
-                    ${reasonsHtml}
-                </ul>
+                <h4 style="margin:0 0 6px;">🧠 دلایل تحلیل:</h4>
+                ${reasonsHtml}
 
                 <hr style="margin:16px 0;border-color:#1e293b">
 
-                <h3 style="color:${recColor}">
-                    📌 پیشنهاد نهایی: ${recText}
+                <h3 class="${rec.cls}" style="margin:0;">
+                    📌 پیشنهاد نهایی: ${rec.text}
                 </h3>
             `;
-        })
-        .catch(() => {
-            resultBox.innerHTML =
-                "<p style='color:#ef4444'>❌ دریافت تحلیل ناموفق بود</p>";
-        });
-});
+        } catch (err) {
+            result.innerHTML = `
+                <p style="color:#ef4444; margin:0;">
+                    ❌ دریافت تحلیل ناموفق بود
+                </p>
+                <p class="muted" style="margin:8px 0 0;">
+                    ${String(err?.message || err)}
+                </p>
+            `;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "تحلیل کن";
+        }
+    });
+})();
 </script>
 
 </body>
