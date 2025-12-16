@@ -1,0 +1,7 @@
+Django>=5.0
+gunicorn
+finpy-tse
+pandas
+numpy
+ta
+psycopg2-binary
