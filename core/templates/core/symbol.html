@@ -1,67 +1,154 @@
-<!doctype html>
-<html lang="fa" dir="rtl">
+<!DOCTYPE html>
+<html lang="fa">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>TSETMC Analyzer</title>
-  <style>
-    body { font-family: sans-serif; margin: 24px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    input { padding: 10px; min-width: 220px; }
-    button { padding: 10px 14px; cursor: pointer; }
-    pre { background: #111; color: #0f0; padding: 12px; border-radius: 8px; overflow: auto; }
-    .card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; margin-top: 16px; }
-    .muted { color: #666; font-size: 13px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>تحلیل نماد بورس تهران</title>
+
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 40px;
+            direction: rtl;
+        }
+
+        .box {
+            max-width: 600px;
+            margin: auto;
+            background: #020617;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,.5);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+        }
+
+        input {
+            background: #020617;
+            border: 1px solid #1e293b;
+            color: #e5e7eb;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .card {
+            margin-top: 20px;
+            padding: 16px;
+            background: #020617;
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+        }
+
+        .buy { color: #22c55e; }
+        .sell { color: #ef4444; }
+        .neutral { color: #eab308; }
+
+        .label {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .value {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+    </style>
 </head>
+
 <body>
 
-  <h2>تحلیل نماد</h2>
-  <div class="muted">نماد را وارد کن (مثلاً: فملی) و روی تحلیل بزن.</div>
+<div class="box">
+    <h2>📊 تحلیل نماد بورس تهران</h2>
 
-  <div class="card">
-    <div class="row">
-      <input id="symbol" placeholder="مثلاً: فملی" />
-      <button id="btn">تحلیل</button>
-    </div>
-  </div>
+    <form id="analyze-form">
+        <input type="text" name="symbol" placeholder="مثلاً: فملی" required>
+        <button type="submit">تحلیل کن</button>
+    </form>
 
-  <div class="card">
-    <h3>خروجی</h3>
-    <pre id="out">{}</pre>
-  </div>
+    <div id="result" class="card" style="display:none;"></div>
+</div>
 
-  <script>
-    const symbolEl = document.getElementById("symbol");
-    const outEl = document.getElementById("out");
-    const btn = document.getElementById("btn");
+<script>
+document.getElementById("analyze-form").addEventListener("submit", function (e) {
+    e.preventDefault();
 
-    async function run() {
-      const symbol = (symbolEl.value || "").trim();
-      if (!symbol) {
-        outEl.textContent = JSON.stringify({error: "symbol is required"}, null, 2);
-        return;
-      }
+    const symbolInput = document.querySelector("input[name='symbol']");
+    const symbol = symbolInput.value.trim();
+    if (!symbol) return;
 
-      outEl.textContent = "درحال دریافت داده...";
-      const url = `/api/analyze/?symbol=${encodeURIComponent(symbol)}`;
+    const resultBox = document.getElementById("result");
+    resultBox.style.display = "block";
+    resultBox.innerHTML = "⏳ در حال دریافت تحلیل...";
 
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        outEl.textContent = JSON.stringify(data, null, 2);
-      } catch (e) {
-        outEl.textContent = JSON.stringify({error: String(e)}, null, 2);
-      }
-    }
+    fetch(`/api/analyze/?symbol=${encodeURIComponent(symbol)}`)
+        .then(res => res.json())
+        .then(data => {
 
-    btn.addEventListener("click", run);
+            let color = "neutral";
+            let recoText = "نگه‌داری";
 
-    // Enter هم کار کنه
-    symbolEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") run();
-    });
-  </script>
+            if (data.recommendation === "buy") {
+                color = "buy";
+                recoText = "خرید";
+            }
+            if (data.recommendation === "sell") {
+                color = "sell";
+                recoText = "فروش";
+            }
+
+            resultBox.innerHTML = `
+                <div class="label">نماد</div>
+                <div class="value">${data.symbol}</div>
+
+                <div class="label">قیمت آخر</div>
+                <div class="value">${data.last_price}</div>
+
+                <div class="label">روند بازار</div>
+                <div class="value">${data.trend === "up" ? "صعودی" : "نزولی"}</div>
+
+                <div class="label">RSI</div>
+                <div class="value">${data.rsi}</div>
+
+                <div class="label">درصد ریسک</div>
+                <div class="value">${data.risk_percent}%</div>
+
+                <div class="label">حد ضرر</div>
+                <div class="value">${data.stop_loss}</div>
+
+                <div class="label">حد سود</div>
+                <div class="value">${data.take_profit}</div>
+
+                <hr style="border-color:#1e293b">
+
+                <h3 class="${color}">📌 پیشنهاد نهایی: ${recoText}</h3>
+            `;
+        })
+        .catch(() => {
+            resultBox.innerHTML = "❌ خطا در دریافت اطلاعات تحلیل";
+        });
+});
+</script>
 
 </body>
 </html>
