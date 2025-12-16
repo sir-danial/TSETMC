@@ -63,16 +63,6 @@
         .buy { color: #22c55e; }
         .sell { color: #ef4444; }
         .neutral { color: #eab308; }
-
-        .label {
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .value {
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
     </style>
 </head>
 
@@ -82,7 +72,7 @@
     <h2>📊 تحلیل نماد بورس تهران</h2>
 
     <form id="analyze-form">
-        <input type="text" name="symbol" placeholder="مثلاً: فملی" required>
+        <input id="symbol-input" type="text" placeholder="مثلاً: فملی" required>
         <button type="submit">تحلیل کن</button>
     </form>
 
@@ -93,8 +83,7 @@
 document.getElementById("analyze-form").addEventListener("submit", function (e) {
     e.preventDefault();
 
-    const symbolInput = document.querySelector("input[name='symbol']");
-    const symbol = symbolInput.value.trim();
+    const symbol = document.getElementById("symbol-input").value.trim();
     if (!symbol) return;
 
     const resultBox = document.getElementById("result");
@@ -105,47 +94,50 @@ document.getElementById("analyze-form").addEventListener("submit", function (e) 
         .then(res => res.json())
         .then(data => {
 
-            let color = "neutral";
-            let recoText = "نگه‌داری";
+            let recColor = "#eab308";
+            let recText = "نگهداری";
 
             if (data.recommendation === "buy") {
-                color = "buy";
-                recoText = "خرید";
+                recColor = "#22c55e";
+                recText = "خرید";
             }
             if (data.recommendation === "sell") {
-                color = "sell";
-                recoText = "فروش";
+                recColor = "#ef4444";
+                recText = "فروش";
+            }
+
+            let reasonsHtml = "";
+            if (Array.isArray(data.reasons)) {
+                reasonsHtml = data.reasons.map(r => `<li>${r}</li>`).join("");
             }
 
             resultBox.innerHTML = `
-                <div class="label">نماد</div>
-                <div class="value">${data.symbol}</div>
+                <h3>نماد: ${data.symbol}</h3>
 
-                <div class="label">قیمت آخر</div>
-                <div class="value">${data.last_price}</div>
+                <p>📌 قیمت آخر: <b>${data.last_price}</b></p>
+                <p>📈 روند بازار: <b>${data.trend === "up" ? "صعودی" : data.trend === "down" ? "نزولی" : "رنج"}</b></p>
+                <p>📊 RSI: <b>${data.rsi}</b></p>
+                <p>⚠️ درصد ریسک: <b>${data.risk_percent}%</b></p>
+                <p>🛑 حد ضرر: <b>${data.stop_loss}</b></p>
+                <p>🎯 حد سود: <b>${data.take_profit}</b></p>
 
-                <div class="label">روند بازار</div>
-                <div class="value">${data.trend === "up" ? "صعودی" : "نزولی"}</div>
+                <hr style="margin:16px 0;border-color:#1e293b">
 
-                <div class="label">RSI</div>
-                <div class="value">${data.rsi}</div>
+                <h4>🧠 دلایل تحلیل:</h4>
+                <ul style="padding-right:18px; line-height:1.9">
+                    ${reasonsHtml}
+                </ul>
 
-                <div class="label">درصد ریسک</div>
-                <div class="value">${data.risk_percent}%</div>
+                <hr style="margin:16px 0;border-color:#1e293b">
 
-                <div class="label">حد ضرر</div>
-                <div class="value">${data.stop_loss}</div>
-
-                <div class="label">حد سود</div>
-                <div class="value">${data.take_profit}</div>
-
-                <hr style="border-color:#1e293b">
-
-                <h3 class="${color}">📌 پیشنهاد نهایی: ${recoText}</h3>
+                <h3 style="color:${recColor}">
+                    📌 پیشنهاد نهایی: ${recText}
+                </h3>
             `;
         })
         .catch(() => {
-            resultBox.innerHTML = "❌ خطا در دریافت اطلاعات تحلیل";
+            resultBox.innerHTML =
+                "<p style='color:#ef4444'>❌ دریافت تحلیل ناموفق بود</p>";
         });
 });
 </script>
