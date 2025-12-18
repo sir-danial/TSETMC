@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from core.models import Symbol, DailyPrice
-from core.data_providers.brapi import fetch_daily_history
+from core.data_providers.brsapi_provider import fetch_daily_history
 
 
 class Command(BaseCommand):

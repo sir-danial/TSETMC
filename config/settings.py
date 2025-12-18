@@ -14,11 +14,11 @@ SECRET_KEY = os.getenv(
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = [
-    "*",
     "localhost",
     "127.0.0.1",
     "daniele.darkube.app",
 ]
+
 
 
 # --------------------------------------------------
@@ -121,3 +121,11 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+BRS_API_KEY = os.getenv("BRS_API_KEY")
+
+if not BRS_API_KEY:
+    raise RuntimeError("BRS_API_KEY environment variable is required")
+
+
+

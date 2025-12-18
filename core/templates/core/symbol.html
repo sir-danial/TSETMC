@@ -5,8 +5,28 @@
     <title>تحلیل نماد بورس تهران</title>
 
     <style>
+        /* Font (Vazir) */
+        @font-face {
+          font-family: "Vazir";
+          src: url("/static/core/fonts/vazir/Vazir.woff2") format("woff2"),
+               url("/static/core/fonts/vazir/Vazir.woff") format("woff"),
+               url("/static/core/fonts/vazir/Vazir.ttf") format("truetype");
+          font-weight: 400;
+          font-style: normal;
+          font-display: swap;
+        }
+        @font-face {
+          font-family: "Vazir";
+          src: url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2"),
+               url("/static/core/fonts/vazir/Vazir-Bold.woff") format("woff"),
+               url("/static/core/fonts/vazir/Vazir-Bold.ttf") format("truetype");
+          font-weight: 700;
+          font-style: normal;
+          font-display: swap;
+        }
+
         body {
-            font-family: Tahoma, sans-serif;
+            font-family: "Vazir", Tahoma, sans-serif;
             background: #0f172a;
             color: #e5e7eb;
             padding: 40px;
@@ -22,9 +42,7 @@
             box-shadow: 0 0 30px rgba(0,0,0,.5);
         }
 
-        h2 {
-            margin-bottom: 20px;
-        }
+        h2 { margin-bottom: 20px; }
 
         input, button {
             width: 100%;
@@ -46,11 +64,10 @@
             color: white;
             font-size: 16px;
             cursor: pointer;
+            font-weight: 700;
         }
 
-        button:hover {
-            background: #1d4ed8;
-        }
+        button:hover { background: #1d4ed8; }
 
         .card {
             margin-top: 20px;
@@ -75,12 +92,21 @@
         .row:last-child { border-bottom: none; }
         .k { color:#94a3b8; }
         .v { font-weight: bold; }
+        a.back {
+            display:inline-block;
+            margin-bottom:12px;
+            color:#93c5fd;
+            text-decoration:none;
+            font-size:13px;
+        }
+        a.back:hover{ text-decoration:underline; }
     </style>
 </head>
 
 <body>
 
 <div class="box">
+    <a class="back" href="/">← برگشت به داشبورد</a>
     <h2>📊 تحلیل نماد بورس تهران</h2>
 
     <form id="analyze-form">
@@ -105,13 +131,12 @@
     }
 
     function recFa(r) {
-        if (r === "buy") return { text: "خرید", cls: "buy", color: "#22c55e" };
-        if (r === "sell") return { text: "فروش", cls: "sell", color: "#ef4444" };
-        return { text: "نگهداری", cls: "neutral", color: "#eab308" };
+        if (r === "buy") return { text: "خرید", cls: "buy" };
+        if (r === "sell") return { text: "فروش", cls: "sell" };
+        return { text: "نگهداری", cls: "neutral" };
     }
 
     function nf(x) {
-        // اگر عدد بود با جداکننده هزار نمایش بده
         const n = Number(x);
         if (!Number.isFinite(n)) return String(x ?? "");
         return n.toLocaleString("fa-IR");
@@ -120,19 +145,10 @@
     async function analyze(symbol) {
         const url = `/api/analyze/?symbol=${encodeURIComponent(symbol)}`;
         const res = await fetch(url, { method: "GET" });
-
-        // اگر بک خطا داد
-        if (!res.ok) {
-            throw new Error("HTTP " + res.status);
-        }
+        if (!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json();
-
-        // اگر API پیام error داشت
-        if (data && data.error) {
-            throw new Error(data.error);
-        }
-
+        if (data && data.error) throw new Error(data.error);
         return data;
     }
 
@@ -142,7 +158,6 @@
         const symbol = (input.value || "").trim();
         if (!symbol) return;
 
-        // UI loading
         btn.disabled = true;
         btn.textContent = "در حال تحلیل...";
         result.style.display = "block";
@@ -184,18 +199,22 @@
             `;
         } catch (err) {
             result.innerHTML = `
-                <p style="color:#ef4444; margin:0;">
-                    ❌ دریافت تحلیل ناموفق بود
-                </p>
-                <p class="muted" style="margin:8px 0 0;">
-                    ${String(err?.message || err)}
-                </p>
+                <p style="color:#ef4444; margin:0;">❌ دریافت تحلیل ناموفق بود</p>
+                <p class="muted" style="margin:8px 0 0;">${String(err?.message || err)}</p>
             `;
         } finally {
             btn.disabled = false;
             btn.textContent = "تحلیل کن";
         }
     });
+
+    // اگر با query وارد شدی، خودکار تحلیل کن
+    const q = new URLSearchParams(location.search);
+    const s = (q.get("symbol") || "").trim();
+    if (s) {
+        input.value = s;
+        form.dispatchEvent(new Event("submit"));
+    }
 })();
 </script>
 

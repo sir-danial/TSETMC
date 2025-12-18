@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>داشبورد بازار</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    /* ---------------- Font (Vazir) ---------------- */
+    @font-face {
+      font-family: "Vazir";
+      src: url("/static/core/fonts/vazir/Vazir.woff2") format("woff2"),
+           url("/static/core/fonts/vazir/Vazir.woff") format("woff"),
+           url("/static/core/fonts/vazir/Vazir.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Vazir";
+      src: url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2"),
+           url("/static/core/fonts/vazir/Vazir-Bold.woff") format("woff"),
+           url("/static/core/fonts/vazir/Vazir-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root{
+      --bg:#0b1220;
+      --card:#0a0f1a;
+      --card2:#0b1423;
+      --border:#1e293b;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --blue:#2563eb;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#eab308;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      padding:28px;
+      font-family:"Vazir", Tahoma, sans-serif;
+      background: radial-gradient(1200px 600px at 60% -10%, rgba(37,99,235,.20), transparent 60%),
+                  radial-gradient(900px 500px at 10% 0%, rgba(34,197,94,.12), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+
+    .container{ max-width:1200px; margin:0 auto; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card);
+      border:1px solid rgba(30,41,59,.75);
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 0 35px rgba(0,0,0,.35);
+      min-height: 210px;
+    }
+
+    .card h3{
+      margin:0 0 14px;
+      font-size:18px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .muted{ color:var(--muted); font-size:13px; }
+
+    /* ---------- Clock ---------- */
+    .clockWrap{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+
+    .analogFrame{
+      width:180px;
+      height:180px;
+      border-radius:999px;
+      overflow:hidden;
+      border:1px solid rgba(148,163,184,.25);
+      box-shadow: inset 0 0 25px rgba(0,0,0,.55);
+      background:#070b12;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .analogFrame iframe{
+      width:160px;
+      height:160px;
+      border:0;
+    }
+
+    .digital{
+      flex:1;
+      min-width:220px;
+    }
+    .digital .time{
+      font-size:44px;
+      line-height:1.1;
+      letter-spacing: 1px;
+      font-weight:700;
+    }
+    .digital .date{
+      margin-top:6px;
+      font-size:16px;
+      color:var(--muted);
+    }
+    .digital .weekday{
+      margin-top:2px;
+      font-size:14px;
+      color:rgba(229,231,235,.85);
+    }
+
+    .btn{
+      margin-top:14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(37,99,235,.45);
+      background: rgba(37,99,235,.15);
+      color:#dbeafe;
+      cursor:pointer;
+      text-decoration:none;
+      font-weight:700;
+      width:100%;
+      transition:.15s ease;
+    }
+    .btn:hover{ background: rgba(37,99,235,.25); }
+
+    /* ---------- Index boxes ---------- */
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px 14px;
+    }
+    .item{
+      padding:10px 12px;
+      border:1px solid rgba(30,41,59,.75);
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    }
+    .k{ color:var(--muted); font-size:12px; }
+    .v{ margin-top:4px; font-size:16px; font-weight:700; }
+    .chg.pos{ color: var(--green); }
+    .chg.neg{ color: var(--red); }
+    .chg.neu{ color: var(--yellow); }
+
+    /* ---------- Table (Selected indices) ---------- */
+    .tableCard{
+      margin-top:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card2);
+      border:1px solid rgba(30,41,59,.75);
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 0 35px rgba(0,0,0,.35);
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius:14px;
+      border:1px solid rgba(30,41,59,.75);
+    }
+    thead th{
+      background: rgba(2,6,23,.65);
+      color:#e5e7eb;
+      font-weight:700;
+      font-size:13px;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(30,41,59,.75);
+      white-space:nowrap;
+    }
+    tbody td{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(30,41,59,.55);
+      color: rgba(229,231,235,.92);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    tbody tr:hover td{ background: rgba(37,99,235,.06); }
+    tbody tr:last-child td{ border-bottom:none; }
+
+    .scroll{
+      max-height: 360px;
+      overflow:auto;
+      border-radius:14px;
+    }
+
+    .footerLine{
+      margin-top:10px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .digital .time{ font-size:40px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="grid">
+
+      <!-- (چپ) فرابورس -->
+      <div class="card">
+        <h3>📈 شاخص فرابورس</h3>
+
+        <div class="kv" id="index-2">
+          <div class="item"><div class="k">وضعیت</div><div class="v muted">در حال دریافت...</div></div>
+          <div class="item"><div class="k">شاخص</div><div class="v">—</div></div>
+
+          <div class="item"><div class="k">تغییر</div><div class="v chg neu">—</div></div>
+          <div class="item"><div class="k">ارزش بازار پایه (mv_base)</div><div class="v">—</div></div>
+
+          <div class="item"><div class="k">ارزش بازار اول و دوم (mv_main)</div><div class="v">—</div></div>
+          <div class="item"><div class="k">تعداد معاملات (tno)</div><div class="v">—</div></div>
+
+          <div class="item"><div class="k">حجم معاملات (tvol)</div><div class="v">—</div></div>
+          <div class="item"><div class="k">ارزش معاملات (tval)</div><div class="v">—</div></div>
+        </div>
+
+        <div class="footerLine">
+          <div id="idx2-upd">آخرین بروزرسانی: —</div>
+          <div></div>
+        </div>
+      </div>
+
+      <!-- (وسط) بورس -->
+      <div class="card">
+        <h3>📊 شاخص بورس</h3>
+
+        <div class="kv" id="index-1">
+          <div class="item"><div class="k">وضعیت</div><div class="v muted">در حال دریافت...</div></div>
+          <div class="item"><div class="k">شاخص کل</div><div class="v">—</div></div>
+
+          <div class="item"><div class="k">تغییر</div><div class="v chg neu">—</div></div>
+          <div class="item"><div class="k">ارزش بازار (mv)</div><div class="v">—</div></div>
+
+          <div class="item"><div class="k">تعداد معاملات (tno)</div><div class="v">—</div></div>
+          <div class="item"><div class="k">حجم معاملات (tvol)</div><div class="v">—</div></div>
+
+          <div class="item"><div class="k">ارزش معاملات (tval)</div><div class="v">—</div></div>
+          <div class="item"><div class="k"></div><div class="v"></div></div>
+        </div>
+
+        <div class="footerLine">
+          <div id="idx1-upd">آخرین بروزرسانی: —</div>
+          <div></div>
+        </div>
+      </div>
+
+      <!-- (راست) Clock Card -->
+      <div class="card" id="clock-card">
+        <h3>🕒 زمان تهران</h3>
+
+        <div class="clockWrap">
+          <div class="analogFrame" aria-label="ساعت عقربه‌ای">
+            <iframe
+              src="https://free.timeanddate.com/clock/ia7ed06t/n246/szw160/szh160/hocddd/hbw0/hfc000/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw8/mqd100/mhcfff/mhl15/mhw4/mhd100/mmv0/hhcff9/hmcff9"
+              frameborder="0"
+              width="160"
+              height="160"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+              title="Tehran Clock"
+            ></iframe>
+          </div>
+
+          <div class="digital">
+            <div class="time" id="teh-time">--:--:--</div>
+            <div class="date" id="teh-date">----</div>
+            <div class="weekday" id="teh-weekday">----</div>
+
+            <a class="btn" href="/symbol/">تحلیل نماد بورس</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Selected indices table -->
+    <div class="tableCard">
+      <h3 style="margin:0 0 12px;">🧾 جدول شاخص‌های منتخب</h3>
+
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>مقدار</th>
+              <th>تغییر</th>
+              <th>%</th>
+              <th>کمترین</th>
+              <th>بیشترین</th>
+            </tr>
+          </thead>
+          <tbody id="selected-body">
+            <tr><td colspan="6" class="muted">در حال دریافت...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footerLine">
+        <div id="idx3-upd">آخرین بروزرسانی: —</div>
+        <div></div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+(function () {
+  const TTL = 15 * 60 * 1000; // 15 min front cache
+
+  function formatFaNumber(x) {
+    const n = Number(x);
+    if (!Number.isFinite(n)) return (x ?? "—").toString();
+    return n.toLocaleString("fa-IR");
+  }
+
+  function formatFaDateTime(date, time) {
+    if (!date || !time) return "—";
+    const d = new Date(`${date}T${time}`);
+    if (isNaN(d)) return `${date} ${time}`;
+
+    return new Intl.DateTimeFormat("fa-IR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).format(d);
+  }
+
+
+  function formatFaPercent(x) {
+    const n = Number(x);
+    if (!Number.isFinite(n)) return "—";
+    return n.toLocaleString("fa-IR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }) + "%";
+  }
+
+
+  function faTime(timeStr) {
+    if (!timeStr || typeof timeStr !== "string") return "—";
+    return timeStr.replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+  }
+
+  function formatHemt(x) {
+    const n = Number(x);
+    if (!Number.isFinite(n)) return (x ?? "—").toString();
+    const v = n / 10000000000000; // 10^13
+    return `${v.toLocaleString("fa-IR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} همت`;
+  }
+
+  function chgClass(x) {
+    const n = Number(x);
+    if (!Number.isFinite(n) || n === 0) return "chg neu";
+    return n > 0 ? "chg pos" : "chg neg";
+  }
+
+  function pct(change, indexVal) {
+    const ch = Number(change), idx = Number(indexVal);
+    if (!Number.isFinite(ch) || !Number.isFinite(idx) || idx === 0) return null;
+    return ((ch / idx) * 100).toFixed(2);
+  }
+
+  // ---------- Digital clock (Tehran) ----------
+  const elTime = document.getElementById("teh-time");
+  const elDate = document.getElementById("teh-date");
+  const elWeekday = document.getElementById("teh-weekday");
+
+  function tickClock() {
+    const d = new Date();
+
+    const partsTime = new Intl.DateTimeFormat("fa-IR", {
+      timeZone: "Asia/Tehran",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false
+    }).formatToParts(d);
+
+    const getPart = (type) => (partsTime.find(p => p.type === type)?.value || "");
+    elTime.textContent = `${getPart("hour")}:${getPart("minute")}:${getPart("second")}`;
+
+    const partsDate = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+      timeZone: "Asia/Tehran",
+      year: "numeric", month: "long", day: "2-digit"
+    }).formatToParts(d);
+
+    const year = partsDate.find(p => p.type === "year")?.value || "";
+    const month = partsDate.find(p => p.type === "month")?.value || "";
+    const day = partsDate.find(p => p.type === "day")?.value || "";
+    elDate.textContent = `${day} ${month} ${year}`;
+
+    const weekday = new Intl.DateTimeFormat("fa-IR", {
+      timeZone: "Asia/Tehran",
+      weekday: "long"
+    }).format(d);
+    elWeekday.textContent = weekday;
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  // ---------- Front cache ----------
+  function getCache(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.ts) return null;
+      if (Date.now() - obj.ts > TTL) return null;
+      return obj.data;
+    } catch { return null; }
+  }
+  function setCache(key, data) {
+    try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+  }
+
+  async function fetchIndex(typeNum) {
+    const cacheKey = `tsetmc_index_${typeNum}`;
+    const cached = getCache(cacheKey);
+    if (cached) return { data: cached, cached: true };
+    const res = await fetch(`/api/tsetmc/index/?type=${encodeURIComponent(typeNum)}`);
+    const data = await res.json();
+    setCache(cacheKey, data);
+    return { data, cached: false };
+  }
+
+  // ---------- Render بورس (type=1) ----------
+  function renderBourse(obj) {
+    const box = document.getElementById("index-1");
+    if (!box) return;
+    const items = box.querySelectorAll(".item");
+
+    if (!obj || obj.error) {
+      items[0].querySelector(".v").textContent = "خطا در دریافت";
+      return;
+    }
+
+    items[0].querySelector(".v").textContent = obj.state || "—";
+    items[1].querySelector(".v").textContent = formatFaNumber(obj.index);
+
+    const chgEl = items[2].querySelector(".v");
+    chgEl.className = `v ${chgClass(obj.index_change)}`;
+    const p = pct(obj.index_change, obj.index);
+    chgEl.textContent = p === null
+     ? formatFaNumber(obj.index_change)
+     : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
+
+
+    // mv باید نمایش داده شود
+    items[3].querySelector(".v").textContent = formatHemt(obj.mv);
+
+    items[4].querySelector(".v").textContent = formatFaNumber(obj.tno);
+    items[5].querySelector(".v").textContent = formatFaNumber(obj.tvol);
+    items[6].querySelector(".v").textContent = formatHemt(obj.tval);
+
+    document.getElementById("idx1-upd").textContent =
+      `آخرین بروزرسانی: ${faTime(obj.time)}`;
+
+
+  }
+
+  // ---------- Render فرابورس (type=2) ----------
+  function renderFarabourse(obj) {
+    const box = document.getElementById("index-2");
+    if (!box) return;
+    const items = box.querySelectorAll(".item");
+
+    if (!obj || obj.error) {
+      items[0].querySelector(".v").textContent = "خطا در دریافت";
+      return;
+    }
+
+    items[0].querySelector(".v").textContent = obj.state || "—";
+    items[1].querySelector(".v").textContent = formatFaNumber(obj.index);
+
+    const chgEl = items[2].querySelector(".v");
+    chgEl.className = `v ${chgClass(obj.index_change)}`;
+    const p = pct(obj.index_change, obj.index);
+    chgEl.textContent = p === null
+     ? formatFaNumber(obj.index_change)
+     : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
+
+
+
+    items[3].querySelector(".v").textContent = formatHemt(obj.mv_base);
+    items[4].querySelector(".v").textContent = formatHemt(obj.mv_main);
+    items[5].querySelector(".v").textContent = formatFaNumber(obj.tno);
+    items[6].querySelector(".v").textContent = formatFaNumber(obj.tvol);
+    items[7].querySelector(".v").textContent = formatHemt(obj.tval);
+
+    document.getElementById("idx2-upd").textContent =
+      `آخرین بروزرسانی: ${obj.time || "—"}`;
+
+
+  }
+
+  // ---------- Render type=3 table (بدون ستون زمان) ----------
+  function renderSelected(data) {
+    const tbody = document.getElementById("selected-body");
+    if (!tbody) return;
+
+    if (!data || data.error) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted">خطا در دریافت داده‌ها</td></tr>`;
+      return;
+    }
+
+    const list = Array.isArray(data) ? data :
+                 Array.isArray(data?.data) ? data.data :
+                 Array.isArray(data?.items) ? data.items :
+                 null;
+
+    if (!list || !list.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted">داده‌ای برای نمایش موجود نیست.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(row => {
+      const name = row.name ?? "—";
+      const index = row.index ?? "—";
+      const chg = row.index_change ?? "—";
+      const pctv = row.index_change_percent ?? "—";
+      const min = row.min ?? "—";
+      const max = row.max ?? "—";
+      const cls = chgClass(chg);
+
+      return `
+        <tr>
+          <td>${name}</td>
+          <td>${formatFaNumber(index)}</td>
+          <td class="${cls}">${formatFaNumber(chg)}</td>
+          <td class="${cls}">${formatFaPercent(pctv)}</td>
+          <td>${formatFaNumber(min)}</td>
+          <td>${formatFaNumber(max)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    // آخرین بروزرسانی مثل قبل (از زمان ردیف اول)
+    const t = list[0]?.time || "—";
+    document.getElementById("idx3-upd").textContent =
+      `آخرین بروزرسانی: ${faTime(t)}`;
+
+
+
+
+  }
+
+  async function loadAll() {
+    try { renderBourse((await fetchIndex(1)).data); } catch {}
+    try { renderFarabourse((await fetchIndex(2)).data); } catch {}
+    try { renderSelected((await fetchIndex(3)).data); } catch {}
+  }
+
+  loadAll();
+  setInterval(loadAll, TTL);
+})();
+</script>
+
+</body>
+</html>
