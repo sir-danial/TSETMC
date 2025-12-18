@@ -122,11 +122,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-BRS_API_KEY = os.getenv("BRS_API_KEY", "")
+BRS_API_KEY = os.getenv("BRS_API_KEY")
 
-REQUIRE_API_KEY = os.getenv("REQUIRE_API_KEY", "true").lower() == "true"
-
-if REQUIRE_API_KEY and not BRS_API_KEY:
+if not BRS_API_KEY and not DEBUG:
     raise RuntimeError("BRS_API_KEY environment variable is required")
 
 
