@@ -79,12 +79,23 @@
     .muted{ color:var(--muted); font-size:13px; }
 
     /* ---------- Clock ---------- */
-    .clockWrap{
-      display:flex;
-      gap:16px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
+    #clock-card .clockWrap{
+      display: flex;
+      flex-direction: column;      /* عمودی */
+      align-items: center;         /* وسط افقی */
+      justify-content: center;     /* وسط عمودی */
+      gap: 14px;
+      text-align: center;
+    }
+
+    #clock-card .digital{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #clock-card .btn{
+      max-width: 260px;            /* دکمه خیلی پهن نشه */
     }
 
     .analogFrame{
@@ -224,6 +235,13 @@
 </head>
 
 <body>
+<div class="container">
+  <a class="weatherwidget-io" href="https://forecast7.com/en/35d6951d39/tehran/" data-label_1="TEHRAN" data-label_2="IRAN" data-theme="dark" >TEHRAN IRAN</a>
+    <script>
+      !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+    </script>
+</div>
+
   <div class="container">
 
     <div class="grid">
@@ -305,6 +323,60 @@
 
     </div>
 
+    <!-- ====== (NEW) Gold & Currency box ====== -->
+    <div class="tableCard" id="goldcurrency-card">
+      <h3 style="margin:0 0 12px;">💰 ارز و طلا</h3>
+
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>قیمت</th>
+              <th>تغییر</th>
+              <th>%</th>
+              <th>واحد</th>
+            </tr>
+          </thead>
+          <tbody id="goldcurrency-body">
+            <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footerLine">
+        <div id="goldcurrency-upd">آخرین بروزرسانی: —</div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- ====== (NEW) Crypto box ====== -->
+    <div class="tableCard" id="crypto-card">
+      <h3 style="margin:0 0 12px;">🪙 رمز ارز</h3>
+
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>قیمت</th>
+              <th>تغییر</th>
+              <th>%</th>
+              <th>واحد</th>
+            </tr>
+          </thead>
+          <tbody id="crypto-body">
+            <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footerLine">
+        <div id="crypto-upd">آخرین بروزرسانی: —</div>
+        <div></div>
+      </div>
+    </div>
+
     <!-- Selected indices table -->
     <div class="tableCard">
       <h3 style="margin:0 0 12px;">🧾 جدول شاخص‌های منتخب</h3>
@@ -345,23 +417,6 @@
     return n.toLocaleString("fa-IR");
   }
 
-  function formatFaDateTime(date, time) {
-    if (!date || !time) return "—";
-    const d = new Date(`${date}T${time}`);
-    if (isNaN(d)) return `${date} ${time}`;
-
-    return new Intl.DateTimeFormat("fa-IR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false
-    }).format(d);
-  }
-
-
   function formatFaPercent(x) {
     const n = Number(x);
     if (!Number.isFinite(n)) return "—";
@@ -370,7 +425,6 @@
       maximumFractionDigits: 2
     }) + "%";
   }
-
 
   function faTime(timeStr) {
     if (!timeStr || typeof timeStr !== "string") return "—";
@@ -457,6 +511,141 @@
     return { data, cached: false };
   }
 
+  // ---------- Gold/Currency (NEW) ----------
+  async function fetchGoldCurrency() {
+    const cacheKey = "brs_gold_currency";
+    const cached = getCache(cacheKey);
+    if (cached) return { data: cached, cached: true };
+
+    // این endpoint باید در بک‌اند اضافه شود (پروکسی به BrsApi)
+    const res = await fetch(`/api/market/gold-currency/`);
+    if (!res.ok) throw new Error("gold-currency fetch failed");
+    const data = await res.json();
+    setCache(cacheKey, data);
+    return { data, cached: false };
+  }
+
+  const GOLD_SYMBOLS = new Set([
+    "IR_GOLD_18K",
+    "IR_GOLD_24K",
+    "IR_GOLD_MELTED",
+    "XAUUSD",
+    "IR_COIN_1G",
+    "IR_COIN_QUARTER",
+    "IR_COIN_HALF",
+    "IR_COIN_EMAMI",
+    "IR_COIN_BAHAR",
+  ]);
+
+  const CUR_SYMBOLS = new Set([
+    "USD",
+    "EUR",
+    "AED",
+    "GBP",
+    "JPY",
+    "AUD",
+    "CAD",
+    "TRY",
+    "SAR",
+    "CHF",
+  ]);
+
+  function renderGoldCurrency(payload) {
+    const tbody = document.getElementById("goldcurrency-body");
+    if (!tbody) return;
+
+    if (!payload || payload.error) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت داده‌ها</td></tr>`;
+      return;
+    }
+
+    const gold = Array.isArray(payload.gold) ? payload.gold : [];
+    const currency = Array.isArray(payload.currency) ? payload.currency : [];
+
+    const pickedGold = gold.filter(x => GOLD_SYMBOLS.has(x.symbol));
+    const pickedCur = currency.filter(x => CUR_SYMBOLS.has(x.symbol));
+
+    const list = [...pickedGold, ...pickedCur];
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">داده‌ای برای نمایش موجود نیست.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(row => {
+      const name = row.name ?? "—";
+      const price = row.price ?? "—";
+      const chgV = (row.change_value ?? row.value_change ?? "—");
+      const chgP = (row.change_percent ?? row.value_percent ?? "—");
+      const unit = row.unit ?? "—";
+
+      const cls = chgClass(chgV);
+      return `
+        <tr>
+          <td>${name}</td>
+          <td>${formatFaNumber(price)}</td>
+          <td class="${cls}">${formatFaNumber(chgV)}</td>
+          <td class="${cls}">${formatFaPercent(chgP)}</td>
+          <td>${unit}</td>
+        </tr>
+      `;
+    }).join("");
+
+    // زمان بروزرسانی فقط از «دلار امریکا»
+    const usd = pickedCur.find(x => x.symbol === "USD");
+    const t = usd?.time || list[0]?.time || "—";
+    document.getElementById("goldcurrency-upd").textContent =
+      `آخرین بروزرسانی: ${faTime(t)}`;
+  }
+
+  // ---------- Crypto (NEW) ----------
+  const CRYPTO_SYMBOLS = new Set([
+    "BTC","ETH","XRP","USDT","BNB","SOL","USDC","ADA","DOGE","TRX","LINK","XLM","AVAX","SHIB","LTC"
+  ]);
+
+  function renderCrypto(payload) {
+    const tbody = document.getElementById("crypto-body");
+    if (!tbody) return;
+
+    if (!payload || payload.error) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت داده‌ها</td></tr>`;
+      return;
+    }
+
+    const crypto = Array.isArray(payload.cryptocurrency) ? payload.cryptocurrency : [];
+    const list = crypto.filter(x => CRYPTO_SYMBOLS.has(x.symbol));
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">داده‌ای برای نمایش موجود نیست.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(row => {
+      const name = row.name ?? "—";
+      const price = row.price ?? "—";
+      const chgV = (row.change_value ?? row.value_change ?? "—"); // اگر API داد، نمایش می‌دهیم
+      const chgP = (row.change_percent ?? row.value_percent ?? "—");
+      const unit = row.unit ?? "—";
+
+      const cls = chgClass(chgP); // برای کریپتو اگر change_value نداشت، رنگ را با درصد می‌گیریم
+      return `
+        <tr>
+          <td>${name}</td>
+          <td>${formatFaNumber(price)}</td>
+          <td class="${cls}">${formatFaNumber(chgV)}</td>
+          <td class="${cls}">${formatFaPercent(chgP)}</td>
+          <td>${unit}</td>
+        </tr>
+      `;
+    }).join("");
+
+    // زمان بروزرسانی از بیت‌کوین (یا ردیف اول)
+    const btc = list.find(x => x.symbol === "BTC");
+    const t = btc?.time || list[0]?.time || "—";
+    document.getElementById("crypto-upd").textContent =
+      `آخرین بروزرسانی: ${faTime(t)}`;
+  }
+
   // ---------- Render بورس (type=1) ----------
   function renderBourse(obj) {
     const box = document.getElementById("index-1");
@@ -478,7 +667,6 @@
      ? formatFaNumber(obj.index_change)
      : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
 
-
     // mv باید نمایش داده شود
     items[3].querySelector(".v").textContent = formatHemt(obj.mv);
 
@@ -488,8 +676,6 @@
 
     document.getElementById("idx1-upd").textContent =
       `آخرین بروزرسانی: ${faTime(obj.time)}`;
-
-
   }
 
   // ---------- Render فرابورس (type=2) ----------
@@ -513,8 +699,6 @@
      ? formatFaNumber(obj.index_change)
      : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
 
-
-
     items[3].querySelector(".v").textContent = formatHemt(obj.mv_base);
     items[4].querySelector(".v").textContent = formatHemt(obj.mv_main);
     items[5].querySelector(".v").textContent = formatFaNumber(obj.tno);
@@ -523,8 +707,6 @@
 
     document.getElementById("idx2-upd").textContent =
       `آخرین بروزرسانی: ${faTime(obj.time)}`;
-
-
   }
 
   // ---------- Render type=3 table (بدون ستون زمان) ----------
@@ -572,16 +754,24 @@
     const t = list[0]?.time || "—";
     document.getElementById("idx3-upd").textContent =
       `آخرین بروزرسانی: ${faTime(t)}`;
-
-
-
-
   }
 
   async function loadAll() {
     try { renderBourse((await fetchIndex(1)).data); } catch {}
     try { renderFarabourse((await fetchIndex(2)).data); } catch {}
     try { renderSelected((await fetchIndex(3)).data); } catch {}
+
+    // NEW: gold/currency + crypto
+    try {
+      const p = (await fetchGoldCurrency()).data;
+      renderGoldCurrency(p);
+      renderCrypto(p);
+    } catch {
+      const gb = document.getElementById("goldcurrency-body");
+      const cb = document.getElementById("crypto-body");
+      if (gb) gb.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت (endpoint: /api/market/gold-currency/)</td></tr>`;
+      if (cb) cb.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت (endpoint: /api/market/gold-currency/)</td></tr>`;
+    }
   }
 
   loadAll();

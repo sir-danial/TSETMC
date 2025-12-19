@@ -20,3 +20,24 @@ def fetch_index(type_id: int):
     res = requests.get(BASE_URL, params=params, headers=HEADERS, timeout=10)
     res.raise_for_status()
     return res.json()
+
+# =========================
+# Gold / Currency / Crypto
+# =========================
+
+GOLD_CURRENCY_URL = "https://BrsApi.ir/Api/Market/Gold_Currency.php"
+
+
+def fetch_gold_currency():
+    params = {
+        "key": settings.BRS_API_KEY
+    }
+
+    res = requests.get(
+        GOLD_CURRENCY_URL,
+        params=params,
+        headers=HEADERS,
+        timeout=10
+    )
+    res.raise_for_status()
+    return res.json()

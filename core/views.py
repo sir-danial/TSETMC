@@ -51,3 +51,15 @@ def api_tsetmc_index(request):
         safe=(type_id != 3),
         json_dumps_params={"ensure_ascii": False},
     )
+
+
+from core.data_providers.brsapi_provider import fetch_gold_currency
+
+
+def api_gold_currency(request):
+    data = fetch_gold_currency()
+    return JsonResponse(
+        data,
+        safe=False,
+        json_dumps_params={"ensure_ascii": False},
+    )
