@@ -33,9 +33,19 @@ def _in_window(start_hm: tuple[int, int], end_hm: tuple[int, int]) -> bool:
 
 
 def _get_json(url: str, params: dict) -> object:
-    res = requests.get(url, params=params, headers=HEADERS, timeout=10)
-    res.raise_for_status()
-    return res.json()
+    try:
+        res = requests.get(url, params=params, headers=HEADERS, timeout=15)
+        res.raise_for_status()
+        return res.json()
+    except requests.RequestException as e:
+        # این باعث میشه بفهمی دقیقاً دارکوب چی برمی‌گردونه
+        detail = ""
+        try:
+            detail = getattr(e.response, "text", "")[:300]
+        except Exception:
+            pass
+        raise RuntimeError(f"BRSAPI request failed: {e} | body={detail}")
+
 
 
 # =========================

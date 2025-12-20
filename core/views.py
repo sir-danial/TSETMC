@@ -76,3 +76,13 @@ def api_symbol_live(request):
         )
 
     return JsonResponse(row, json_dumps_params={"ensure_ascii": False})
+
+from django.conf import settings
+from django.http import JsonResponse
+
+def api_debug_env(request):
+    return JsonResponse({
+        "DEBUG": settings.DEBUG,
+        "BRS_API_KEY_is_set": bool(getattr(settings, "BRS_API_KEY", None)),
+        "REDIS_URL": "set" if bool(getattr(settings, "CACHES", None)) else "no",
+    })
