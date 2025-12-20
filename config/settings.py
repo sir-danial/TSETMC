@@ -1,26 +1,37 @@
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-load_dotenv()
 
 # --------------------------------------------------
 # Base
 # --------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# --------------------------------------------------
+# Environment (ONLY for local)
+# --------------------------------------------------
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+
+if DEBUG:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
+
+# --------------------------------------------------
+# Security
+# --------------------------------------------------
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY",
     "django-insecure-dev-key-change-me"
 )
-
-DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "daniele.darkube.app",
 ]
-
 
 
 # --------------------------------------------------
@@ -36,8 +47,15 @@ INSTALLED_APPS = [
 
     # local apps
     "core",
+
+    # cron
+    "django_crontab",
 ]
 
+
+# --------------------------------------------------
+# Middleware
+# --------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -76,7 +94,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # --------------------------------------------------
-# Database
+# Database (SQLite – OK for now)
 # --------------------------------------------------
 DATABASES = {
     "default": {
@@ -90,18 +108,10 @@ DATABASES = {
 # Password validation
 # --------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
@@ -124,20 +134,19 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+# --------------------------------------------------
+# BRS API
+# --------------------------------------------------
 BRS_API_KEY = os.getenv("BRS_API_KEY")
 
 if not BRS_API_KEY and not DEBUG:
     raise RuntimeError("BRS_API_KEY environment variable is required")
 
 
-# settings.py
-
-INSTALLED_APPS += [
-    "django_crontab",
-]
-
-
-
+# --------------------------------------------------
+# Redis / Cache
+# --------------------------------------------------
 REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
 
 CACHES = {
@@ -146,8 +155,6 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        },
     }
 }
-
-
