@@ -175,7 +175,6 @@ def _live_orderbook_pressure(live: Dict[str, Any]) -> Dict[str, Any]:
     pd1 = _f(live.get("pd1"), 0.0)
     po1 = _f(live.get("po1"), 0.0)
 
-    # اندازه صف را با حجم ردیف اول می‌گیریم
     buy_q = qd1
     sell_q = qo1
 
@@ -246,19 +245,17 @@ def _score_engine(
         trend_score += 2
         reasons.append(f"ADX حدود {round(adx, 1)} است (روند ضعیف/رنج).")
 
-    # --- Live confirmation / contradiction (NEW) ---
+    # Live confirmation / contradiction
     if live:
         pl = _f(live.get("pl"), 0.0)
         pc = _f(live.get("pc"), 0.0)
         py = _f(live.get("py"), 0.0)
         plc = _f(live.get("plc"), 0.0)
 
-        # اگر روند صعودی ولی قیمت آخر زیر پایانی و تغییر منفی باشد => کاهش امتیاز
         if ema_bull and pc > 0 and pl > 0 and (pl < pc) and (plc < 0):
             trend_score -= 3
             reasons.append("⚠️ با وجود روند تکنیکال صعودی، قیمت آخر زیر پایانی و تغییر منفی است (تایید لایو ضعیف).")
 
-        # اگر روند صعودی و قیمت آخر بالای دیروز + تغییر مثبت => تقویت
         if ema_bull and py > 0 and pl > 0 and (pl > py) and (plc > 0):
             trend_score += 2
             reasons.append("✅ لایو: قیمت آخر بالاتر از دیروز و تغییر مثبت است (تایید روند).")
@@ -297,7 +294,6 @@ def _score_engine(
     else:
         reasons.append("سوپرترند در فاز نزولی است.")
 
-    # --- Live real money ratio (NEW) ---
     if live:
         ratio = _live_power_ratio(live)
         if ratio is not None:
@@ -331,7 +327,6 @@ def _score_engine(
         struct_score += 12
         reasons.append("ساختار بازار رنج/نامشخص است (به شکست سطح‌ها حساس).")
 
-    # --- Live orderbook pressure (NEW) ---
     if live:
         ob = _live_orderbook_pressure(live)
         if ob.get("signal") == "buy_pressure":
@@ -383,7 +378,6 @@ def _score_engine(
     total = trend_score + mom_score + struct_score + rr_score + vol_score
     score = int(round(_clip(total, 0, 100)))
 
-    # Recommendation
     if score >= 75 and (ema_bull or st_dir == 1):
         rec = "buy"
         reasons.append("امتیاز کلی بالا است و شرایط کلی به نفع خرید است.")
@@ -398,6 +392,81 @@ def _score_engine(
 
 
 # ---------------------------
+# Safe analyze without history
+# ---------------------------
+def _analyze_with_live_only(symbol: str, live: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    اگر دیتای تاریخی (finpy) در دسترس نبود، خروجی را با داده‌های لایو ادامه می‌دهیم
+    تا endpoint /api/analyze نخوابد و 500 ندهد.
+    """
+    pl = _f((live or {}).get("pl"), 0.0)
+    plp = _f((live or {}).get("plp"), 0.0)
+    plc = _f((live or {}).get("plc"), 0.0)
+
+    if plc > 0 or plp > 0:
+        trend = "up"
+    elif plc < 0 or plp < 0:
+        trend = "down"
+    else:
+        trend = "range"
+
+    live_summary = None
+    if live:
+        live_summary = {
+            "l18": _s(live.get("l18")),
+            "l30": _s(live.get("l30")),
+            "cs": _s(live.get("cs")),
+            "time": _s(live.get("time")),
+            "pl": _f(live.get("pl"), 0.0),
+            "pc": _f(live.get("pc"), 0.0),
+            "py": _f(live.get("py"), 0.0),
+            "plc": _f(live.get("plc"), 0.0),
+            "plp": _f(live.get("plp"), 0.0),
+        }
+
+    out: Dict[str, Any] = {
+        "symbol": symbol,
+        "last_price": round(pl, 2),
+        "trend": trend,
+        "rsi": None,
+        "risk_percent": None,
+        "return_percent": 0.0,
+        "stop_loss": None,
+        "take_profit": None,
+        "recommendation": "hold",
+        "score": 50,
+        "reasons": [
+            "تحلیل بر اساس داده‌های لحظه‌ای انجام شد.",
+            "دیتای تاریخی (finpy / old.tsetmc) در دسترس نبود یا اتصال قطع شد.",
+        ],
+        "live": live_summary,
+        "metrics": {
+            "ema20": None,
+            "ema50": None,
+            "ema100": None,
+            "adx": None,
+            "plus_di": None,
+            "minus_di": None,
+            "supertrend_dir": None,
+            "supertrend": None,
+            "atr": None,
+            "atr_percent": None,
+            "slope_percent_per_bar": None,
+            "rr": None,
+            "score_components": {},
+            "structure": {
+                "state": "unknown",
+                "hh": False,
+                "hl": False,
+                "lh": False,
+                "ll": False,
+            },
+        },
+    }
+    return out
+
+
+# ---------------------------
 # Main public function
 # ---------------------------
 def analyze_symbol(symbol: str, live: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -405,15 +474,24 @@ def analyze_symbol(symbol: str, live: Optional[Dict[str, Any]] = None) -> Dict[s
     if not symbol:
         return {"error": "symbol is required"}
 
-    df = fetch_daily_history(symbol)
+    # ✅ مهم: اگر finpy کند/قطع شود، endpoint نخوابد
+    try:
+        df = fetch_daily_history(symbol)
+    except Exception as e:
+        # تحلیل را نکُش؛ فقط با لایو ادامه بده
+        # (این print را اگر لاگینگ داری تبدیل به logger.warning کن)
+        print(f"[WARN] fetch_daily_history failed for {symbol}: {e}")
+        return _analyze_with_live_only(symbol, live)
+
     if df is None or df.empty:
-        return {"error": "no data"}
+        return _analyze_with_live_only(symbol, live)
 
     df = df.tail(300).copy().reset_index(drop=True)
 
     required_cols = {"Open", "High", "Low", "Close"}
     if not required_cols.issubset(set(df.columns)):
-        return {"error": "bad data columns", "columns": list(df.columns)}
+        # اگر ستون‌ها مشکل داشتند هم، باز 500 ندهیم
+        return _analyze_with_live_only(symbol, live)
 
     close = df["Close"].astype(float)
     high = df["High"].astype(float)

@@ -184,16 +184,35 @@
       box-shadow: 0 0 35px rgba(0,0,0,.35);
     }
 
+    /* ✅ اسکرول + مرز و بک‌گراند اینجاست تا sticky خراب نشه */
+    .scroll{
+      max-height: 360px;
+      overflow:auto;
+      border-radius:14px;
+      border:1px solid rgba(30,41,59,.75);
+      background: rgba(2,6,23,.25);
+    }
+
+    /* ✅ wrapper برای پایداری sticky */
+    .tableWrap{
+      min-width: 100%;
+    }
+
     table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      overflow:hidden;
       border-radius:14px;
-      border:1px solid rgba(30,41,59,.75);
+      /* ❌ overflow:hidden باعث خراب شدن sticky میشه، حذف شد */
     }
+
     thead th{
-      background: rgba(2,6,23,.65);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(2,6,23,.92);
+      backdrop-filter: blur(6px);
+
       color:#e5e7eb;
       font-weight:700;
       font-size:13px;
@@ -210,12 +229,6 @@
     }
     tbody tr:hover td{ background: rgba(37,99,235,.06); }
     tbody tr:last-child td{ border-bottom:none; }
-
-    .scroll{
-      max-height: 360px;
-      overflow:auto;
-      border-radius:14px;
-    }
 
     .footerLine{
       margin-top:10px;
@@ -328,20 +341,22 @@
       <h3 style="margin:0 0 12px;">💰 ارز و طلا</h3>
 
       <div class="scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>نام</th>
-              <th>قیمت</th>
-              <th>تغییر</th>
-              <th>%</th>
-              <th>واحد</th>
-            </tr>
-          </thead>
-          <tbody id="goldcurrency-body">
-            <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
-          </tbody>
-        </table>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>قیمت</th>
+                <th>تغییر</th>
+                <th>%</th>
+                <th>واحد</th>
+              </tr>
+            </thead>
+            <tbody id="goldcurrency-body">
+              <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="footerLine">
@@ -355,20 +370,22 @@
       <h3 style="margin:0 0 12px;">🪙 رمز ارز</h3>
 
       <div class="scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>نام</th>
-              <th>قیمت</th>
-              <th>تغییر</th>
-              <th>%</th>
-              <th>واحد</th>
-            </tr>
-          </thead>
-          <tbody id="crypto-body">
-            <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
-          </tbody>
-        </table>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>قیمت</th>
+                <th>تغییر</th>
+                <th>%</th>
+                <th>واحد</th>
+              </tr>
+            </thead>
+            <tbody id="crypto-body">
+              <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="footerLine">
@@ -382,21 +399,23 @@
       <h3 style="margin:0 0 12px;">🧾 جدول شاخص‌های منتخب</h3>
 
       <div class="scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>نام</th>
-              <th>مقدار</th>
-              <th>تغییر</th>
-              <th>%</th>
-              <th>کمترین</th>
-              <th>بیشترین</th>
-            </tr>
-          </thead>
-          <tbody id="selected-body">
-            <tr><td colspan="6" class="muted">در حال دریافت...</td></tr>
-          </tbody>
-        </table>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>مقدار</th>
+                <th>تغییر</th>
+                <th>%</th>
+                <th>کمترین</th>
+                <th>بیشترین</th>
+              </tr>
+            </thead>
+            <tbody id="selected-body">
+              <tr><td colspan="6" class="muted">در حال دریافت...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="footerLine">
@@ -517,7 +536,6 @@
     const cached = getCache(cacheKey);
     if (cached) return { data: cached, cached: true };
 
-    // این endpoint باید در بک‌اند اضافه شود (پروکسی به BrsApi)
     const res = await fetch(`/api/market/gold-currency/`);
     if (!res.ok) throw new Error("gold-currency fetch failed");
     const data = await res.json();
@@ -591,7 +609,6 @@
       `;
     }).join("");
 
-    // زمان بروزرسانی فقط از «دلار امریکا»
     const usd = pickedCur.find(x => x.symbol === "USD");
     const t = usd?.time || list[0]?.time || "—";
     document.getElementById("goldcurrency-upd").textContent =
@@ -623,11 +640,11 @@
     tbody.innerHTML = list.map(row => {
       const name = row.name ?? "—";
       const price = row.price ?? "—";
-      const chgV = (row.change_value ?? row.value_change ?? "—"); // اگر API داد، نمایش می‌دهیم
+      const chgV = (row.change_value ?? row.value_change ?? "—");
       const chgP = (row.change_percent ?? row.value_percent ?? "—");
       const unit = row.unit ?? "—";
 
-      const cls = chgClass(chgP); // برای کریپتو اگر change_value نداشت، رنگ را با درصد می‌گیریم
+      const cls = chgClass(chgP);
       return `
         <tr>
           <td>${name}</td>
@@ -639,7 +656,6 @@
       `;
     }).join("");
 
-    // زمان بروزرسانی از بیت‌کوین (یا ردیف اول)
     const btc = list.find(x => x.symbol === "BTC");
     const t = btc?.time || list[0]?.time || "—";
     document.getElementById("crypto-upd").textContent =
@@ -667,7 +683,6 @@
      ? formatFaNumber(obj.index_change)
      : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
 
-    // mv باید نمایش داده شود
     items[3].querySelector(".v").textContent = formatHemt(obj.mv);
 
     items[4].querySelector(".v").textContent = formatFaNumber(obj.tno);
@@ -750,7 +765,6 @@
       `;
     }).join("");
 
-    // آخرین بروزرسانی مثل قبل (از زمان ردیف اول)
     const t = list[0]?.time || "—";
     document.getElementById("idx3-upd").textContent =
       `آخرین بروزرسانی: ${faTime(t)}`;
@@ -761,7 +775,6 @@
     try { renderFarabourse((await fetchIndex(2)).data); } catch {}
     try { renderSelected((await fetchIndex(3)).data); } catch {}
 
-    // NEW: gold/currency + crypto
     try {
       const p = (await fetchGoldCurrency()).data;
       renderGoldCurrency(p);
