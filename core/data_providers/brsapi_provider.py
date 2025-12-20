@@ -93,12 +93,11 @@ def fetch_gold_currency():
     if cached is not None:
         return cached
 
-    url = f"{GOLD_CURRENCY_URL}?key={settings.BRS_API_KEY}"
+    if not settings.BRS_API_KEY:
+        return {"error": "BRS_API_KEY is not set"}
 
-    res = requests.get(url, headers=HEADERS, timeout=10)
-    res.raise_for_status()
-    data = res.json()
-
+    params = {"key": settings.BRS_API_KEY}
+    data = _get_json(GOLD_CURRENCY_URL, params=params)
     cache.set(cache_key, data, timeout=TTL_SECONDS)
     return data
 
