@@ -1,220 +1,634 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>تحلیل نماد بورس تهران</title>
+  <meta charset="UTF-8" />
+  <title>تحلیل نماد</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <style>
-        /* Font (Vazir) */
-        @font-face {
-          font-family: "Vazir";
-          src: url("/static/core/fonts/vazir/Vazir.woff2") format("woff2"),
-               url("/static/core/fonts/vazir/Vazir.woff") format("woff"),
-               url("/static/core/fonts/vazir/Vazir.ttf") format("truetype");
-          font-weight: 400;
-          font-style: normal;
-          font-display: swap;
-        }
-        @font-face {
-          font-family: "Vazir";
-          src: url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2"),
-               url("/static/core/fonts/vazir/Vazir-Bold.woff") format("woff"),
-               url("/static/core/fonts/vazir/Vazir-Bold.ttf") format("truetype");
-          font-weight: 700;
-          font-style: normal;
-          font-display: swap;
-        }
+  <style>
+    /* ---------------- Font (Vazir) ---------------- */
+    @font-face {
+      font-family: "Vazir";
+      src: url("/static/core/fonts/vazir/Vazir.woff2") format("woff2"),
+           url("/static/core/fonts/vazir/Vazir.woff") format("woff"),
+           url("/static/core/fonts/vazir/Vazir.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Vazir";
+      src: url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2"),
+           url("/static/core/fonts/vazir/Vazir-Bold.woff") format("woff"),
+           url("/static/core/fonts/vazir/Vazir-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
 
-        body {
-            font-family: "Vazir", Tahoma, sans-serif;
-            background: #0f172a;
-            color: #e5e7eb;
-            padding: 40px;
-            direction: rtl;
-        }
+    :root{
+      --bg:#0b1220;
+      --card:#0a0f1a;
+      --card2:#0b1423;
+      --border:#1e293b;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --blue:#2563eb;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#eab308;
+    }
 
-        .box {
-            max-width: 600px;
-            margin: auto;
-            background: #020617;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 0 30px rgba(0,0,0,.5);
-        }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      padding:28px;
+      font-family:"Vazir", Tahoma, sans-serif;
+      background: radial-gradient(1200px 600px at 60% -10%, rgba(37,99,235,.20), transparent 60%),
+                  radial-gradient(900px 500px at 10% 0%, rgba(34,197,94,.12), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      direction: rtl;
+    }
 
-        h2 { margin-bottom: 20px; }
+    .container{ max-width:1200px; margin:0 auto; }
 
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 8px;
-            border: none;
-            font-size: 15px;
-        }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom: 14px;
+    }
 
-        input {
-            background: #020617;
-            border: 1px solid #1e293b;
-            color: #e5e7eb;
-        }
+    a.back{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      color:#93c5fd;
+      text-decoration:none;
+      font-size:13px;
+    }
+    a.back:hover{ text-decoration:underline; }
 
-        button {
-            background: #2563eb;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: 700;
-        }
+    .title{
+      font-size:18px;
+      font-weight:700;
+      margin:0;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
 
-        button:hover { background: #1d4ed8; }
+    .analysis-warning{
+      margin: 10px 0 18px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(234,179,8,.12);
+      border: 1px solid rgba(234,179,8,.35);
+      color: #fde68a;
+      font-size: 13px;
+      line-height: 1.85;
+      box-shadow: 0 0 25px rgba(0,0,0,.25);
+    }
 
-        .card {
-            margin-top: 20px;
-            padding: 16px;
-            background: #020617;
-            border-radius: 10px;
-            border: 1px solid #1e293b;
-        }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns:1fr; }
+    }
 
-        .buy { color: #22c55e; }
-        .sell { color: #ef4444; }
-        .neutral { color: #eab308; }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card);
+      border:1px solid rgba(30,41,59,.75);
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 0 35px rgba(0,0,0,.35);
+    }
 
-        .muted { color:#94a3b8; font-size: 13px; }
-        .row {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            border-bottom: 1px solid #1e293b;
-            padding: 10px 0;
-        }
-        .row:last-child { border-bottom: none; }
-        .k { color:#94a3b8; }
-        .v { font-weight: bold; }
-        a.back {
-            display:inline-block;
-            margin-bottom:12px;
-            color:#93c5fd;
-            text-decoration:none;
-            font-size:13px;
-        }
-        a.back:hover{ text-decoration:underline; }
-    </style>
+    .muted{ color:var(--muted); font-size:13px; }
+
+    .formRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top: 10px;
+    }
+
+    input{
+      flex:1;
+      min-width: 200px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(30,41,59,.75);
+      background: rgba(2,6,23,.35);
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+
+    .btn{
+      padding: 12px 14px;
+      border-radius: 12px;
+      border:1px solid rgba(37,99,235,.45);
+      background: rgba(37,99,235,.15);
+      color:#dbeafe;
+      cursor:pointer;
+      font-weight:700;
+      font-size:14px;
+      transition:.15s ease;
+      min-width: 120px;
+    }
+    .btn:hover{ background: rgba(37,99,235,.25); }
+    input,
+    button,
+    .btn {
+      font-family: "Vazir", Tahoma, sans-serif;
+    }
+
+    input::placeholder {
+      font-family: "Vazir", Tahoma, sans-serif;
+    }
+
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px 14px;
+      margin-top: 14px;
+    }
+    .item{
+      padding:10px 12px;
+      border:1px solid rgba(30,41,59,.75);
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    }
+    .k{ color:var(--muted); font-size:12px; }
+    .v{ margin-top:4px; font-size:15px; font-weight:700; }
+
+    /* ✅ فقط برجسته‌تر کردن کاشی نماد (در live-kv) */
+    #live-kv .item:first-child .v{
+      font-size:18px;
+      font-weight:900;
+      color:#f8fafc;
+      letter-spacing:.2px;
+    }
+
+    .chg.pos{ color: var(--green); }
+    .chg.neg{ color: var(--red); }
+    .chg.neu{ color: var(--yellow); }
+
+    .hr{
+      margin:16px 0;
+      border:0;
+      border-top:1px solid rgba(30,41,59,.75);
+    }
+
+    /* ---- tables ---- */
+    .tableCard{
+      margin-top:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card2);
+      border:1px solid rgba(30,41,59,.75);
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 0 35px rgba(0,0,0,.35);
+    }
+
+    .tableTitle{
+      margin:0 0 12px;
+      font-size:16px;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .scroll{
+      max-height: 260px;
+      overflow:auto;
+      border-radius:14px;
+      border:1px solid rgba(30,41,59,.75);
+      background: rgba(2,6,23,.25);
+    }
+
+    /* ✅ wrapper to keep sticky header reliable */
+    .tableWrap{
+      min-width: 100%;
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      border-radius:14px;
+    }
+
+    thead th{
+      background: rgba(2,6,23,.92);
+      color:#e5e7eb;
+      font-weight:700;
+      font-size:13px;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(30,41,59,.75);
+      white-space:nowrap;
+
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(6px);
+    }
+
+    tbody td{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(30,41,59,.55);
+      color: rgba(229,231,235,.92);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    tbody tr:hover td{ background: rgba(37,99,235,.06); }
+    tbody tr:last-child td{ border-bottom:none; }
+
+    .footerLine{
+      margin-top:10px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    /* recommendation */
+    .buy { color: #22c55e; }
+    .sell { color: #ef4444; }
+    .neutral { color: #eab308; }
+  </style>
 </head>
 
 <body>
+  <div class="container">
 
-<div class="box">
-    <a class="back" href="/">← برگشت به داشبورد</a>
-    <h2>📊 تحلیل نماد بورس تهران</h2>
+    <div class="topbar">
+      <a class="back" href="/">← برگشت به داشبورد</a>
+      <h1 class="title">📊 تحلیل نماد بورس تهران</h1>
+    </div>
 
-    <form id="analyze-form">
-        <input id="symbol-input" type="text" name="symbol" placeholder="مثلاً: فملی" required>
-        <button id="analyze-btn" type="submit">تحلیل کن</button>
-    </form>
+    <div class="analysis-warning">
+      ⚠️ تحلیل ارائه‌شده توسط ماشین بوده و نباید به‌عنوان معیار اصلی تصمیم‌گیری در معاملات در نظر گرفته شود.
+    </div>
 
-    <div id="result" class="card" style="display:none;"></div>
-</div>
+    <div class="grid">
+
+      <!-- LEFT: Analysis -->
+      <div class="card">
+        <div class="muted">نماد را وارد کنید و تحلیل را دریافت کنید.</div>
+
+        <form id="analyze-form" class="formRow" autocomplete="off">
+          <input id="symbol-input" type="text" name="symbol" placeholder="مثلاً: فملی" required />
+          <button id="analyze-btn" class="btn" type="submit">تحلیل کن</button>
+        </form>
+
+        <!-- Live quick info -->
+        <div class="kv" id="live-kv" style="display:none;">
+          <div class="item">
+            <div class="k">نماد</div>
+            <div class="v" id="live-l18">—</div>
+          </div>
+          <div class="item">
+            <div class="k">نام</div>
+            <div class="v" id="live-l30">—</div>
+          </div>
+          <div class="item">
+            <div class="k">گروه صنعت</div>
+            <div class="v" id="live-cs">—</div>
+          </div>
+
+          <!-- ✅ (اصلاح 1) حذف کاشی قیمت آخر تکراری از live-kv -->
+          <!-- <div class="item">
+            <div class="k">قیمت آخر (pl)</div>
+            <div class="v" id="live-pl">—</div>
+          </div> -->
+        </div>
+
+        <hr class="hr" />
+
+        <div id="result" class="muted">برای شروع، نماد را وارد کنید.</div>
+      </div>
+
+      <!-- RIGHT: Live mini cards (tables) -->
+      <div>
+
+        <div class="tableCard">
+          <h3 class="tableTitle">💰 داده قیمتی</h3>
+          <div class="scroll">
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>عنوان</th>
+                    <th>مقدار</th>
+                  </tr>
+                </thead>
+                <tbody id="price-body">
+                  <tr><td colspan="2" class="muted">در حال دریافت...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tableCard">
+          <h3 class="tableTitle">🧾 داده معاملاتی</h3>
+          <div class="scroll">
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>عنوان</th>
+                    <th>مقدار</th>
+                  </tr>
+                </thead>
+                <tbody id="trade-body">
+                  <tr><td colspan="2" class="muted">در حال دریافت...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tableCard">
+          <h3 class="tableTitle">👥 حقیقی و حقوقی</h3>
+          <div class="scroll">
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>عنوان</th>
+                    <th>مقدار</th>
+                  </tr>
+                </thead>
+                <tbody id="reallegal-body">
+                  <tr><td colspan="2" class="muted">در حال دریافت...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
 <script>
 (function () {
-    const form = document.getElementById("analyze-form");
-    const input = document.getElementById("symbol-input");
-    const btn = document.getElementById("analyze-btn");
-    const result = document.getElementById("result");
+  const form = document.getElementById("analyze-form");
+  const input = document.getElementById("symbol-input");
+  const btn = document.getElementById("analyze-btn");
+  const result = document.getElementById("result");
 
-    function trendFa(t) {
-        if (t === "up") return "صعودی";
-        if (t === "down") return "نزولی";
-        return "رنج";
+  const liveKV = document.getElementById("live-kv");
+  const elL18 = document.getElementById("live-l18");
+  const elL30 = document.getElementById("live-l30");
+  const elCS  = document.getElementById("live-cs");
+  const elPL  = document.getElementById("live-pl"); // باقی می‌ماند (تغییری در منطق ندادیم)
+
+  const priceBody = document.getElementById("price-body");
+  const tradeBody = document.getElementById("trade-body");
+  const rlBody    = document.getElementById("reallegal-body");
+
+  // ✅ نگهداری مقادیر لایو برای نمایش در کارت تحلیل
+  let LIVE_PL = null;
+  let LIVE_PLP = null;
+
+  const RL_LABELS = {
+    Buy_CountI: "تعداد خرید حقیقی",
+    Buy_CountN: "تعداد خرید حقوقی",
+    Sell_CountI: "تعداد فروش حقیقی",
+    Sell_CountN: "تعداد فروش حقوقی",
+    Buy_I_Volume: "حجم خرید حقیقی",
+    Buy_N_Volume: "حجم خرید حقوقی",
+    Sell_I_Volume: "حجم فروش حقیقی",
+    Sell_N_Volume: "حجم فروش حقوقی",
+  };
+
+  function trendFa(t) {
+    if (t === "up") return "صعودی";
+    if (t === "down") return "نزولی";
+    return "رنج";
+  }
+
+  function recFa(r) {
+    if (r === "buy") return { text: "خرید", cls: "buy" };
+    if (r === "sell") return { text: "فروش", cls: "sell" };
+    return { text: "نگهداری", cls: "neutral" };
+  }
+
+  // ✅ عدد فارسی + اعشار با "/"
+  function nf(x) {
+    const n = Number(x);
+    if (!Number.isFinite(n)) return String(x ?? "—");
+    const s = n.toLocaleString("fa-IR", { maximumFractionDigits: 8 });
+    return s.replace(/[٫.]/g, "/");
+  }
+
+  function safeText(x) {
+    return (x === null || x === undefined || x === "") ? "—" : String(x);
+  }
+
+  function chgClass(x){
+    const n = Number(x);
+    if (!Number.isFinite(n) || n === 0) return "chg neu";
+    return n > 0 ? "chg pos" : "chg neg";
+  }
+
+  async function analyze(symbol) {
+    const url = `/api/analyze/?symbol=${encodeURIComponent(symbol)}`;
+    const res = await fetch(url, { method: "GET" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  async function fetchLiveSymbol(symbol) {
+    const url = `/api/tsetmc/symbol-live/?symbol=${encodeURIComponent(symbol)}`;
+    const res = await fetch(url, { method: "GET" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  function renderKVLive(d) {
+    liveKV.style.display = "grid";
+    elL18.textContent = safeText(d?.l18);
+    elL30.textContent = safeText(d?.l30);
+    elCS.textContent  = safeText(d?.cs);
+
+    // ✅ چون کاشی live-pl حذف شد، این یکی را دیگر در DOM ست نمی‌کنیم
+    // elPL && (elPL.textContent = nf(d?.pl));
+
+    LIVE_PL = d?.pl ?? null;
+    LIVE_PLP = d?.plp ?? null;
+  }
+
+  function renderPairs(tbody, pairs) {
+    if (!pairs.length) {
+      tbody.innerHTML = `<tr><td colspan="2" class="muted">داده‌ای موجود نیست.</td></tr>`;
+      return;
     }
+    tbody.innerHTML = pairs.map(p => `
+      <tr>
+        <td>${p.k}</td>
+        <td>${p.v}</td>
+      </tr>
+    `).join("");
+  }
 
-    function recFa(r) {
-        if (r === "buy") return { text: "خرید", cls: "buy" };
-        if (r === "sell") return { text: "فروش", cls: "sell" };
-        return { text: "نگهداری", cls: "neutral" };
+  function renderLiveTables(d) {
+    const pricePairs = [
+      { k: "کمترین قیمت روز (pmin)", v: nf(d?.pmin) },
+      { k: "بیشترین قیمت روز (pmax)", v: nf(d?.pmax) },
+      { k: "کمترین قیمت مجاز (tmin)", v: nf(d?.tmin) },
+      { k: "بیشترین قیمت مجاز (tmax)", v: nf(d?.tmax) },
+      { k: "دیروز (py)", v: nf(d?.py) },
+      { k: "اولین (pf)", v: nf(d?.pf) },
+      { k: "قیمت آخر (pl)", v: nf(d?.pl) },
+      { k: "تغییر قیمت آخر (plc)", v: nf(d?.plc) },
+      { k: "درصد تغییر آخر (plp)", v: nf(d?.plp) },
+      { k: "پایانی (pc)", v: nf(d?.pc) },
+      { k: "تغییر پایانی (pcc)", v: nf(d?.pcc) },
+      { k: "درصد تغییر پایانی (pcp)", v: nf(d?.pcp) },
+    ];
+    renderPairs(priceBody, pricePairs);
+
+    const tradePairs = [
+      { k: "تعداد معاملات (tno)", v: nf(d?.tno) },
+      { k: "حجم معاملات (tvol)", v: nf(d?.tvol) },
+      { k: "ارزش معاملات (tval)", v: nf(d?.tval) },
+      { k: "ارزش بازار (mv)", v: nf(d?.mv) },
+      { k: "حجم مبنا (bvol)", v: nf(d?.bvol) },
+      { k: "EPS", v: nf(d?.eps) },
+      { k: "P/E", v: nf(d?.pe) },
+      { k: "آخرین زمان (time)", v: safeText(d?.time) },
+    ];
+    renderPairs(tradeBody, tradePairs);
+
+    const rlKeys = [
+      "Buy_CountI","Buy_CountN","Sell_CountI","Sell_CountN",
+      "Buy_I_Volume","Buy_N_Volume","Sell_I_Volume","Sell_N_Volume"
+    ];
+    const rlPairs = rlKeys.map(key => ({
+      k: RL_LABELS[key] ?? key,
+      v: nf(d?.[key])
+    }));
+    renderPairs(rlBody, rlPairs);
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const symbol = (input.value || "").trim();
+    if (!symbol) return;
+
+    btn.disabled = true;
+    btn.textContent = "در حال دریافت...";
+    result.className = "muted";
+    result.innerHTML = `در حال دریافت تحلیل برای <b>${symbol}</b> ...`;
+
+    try {
+      const [analysis, live] = await Promise.allSettled([
+        analyze(symbol),
+        fetchLiveSymbol(symbol),
+      ]);
+
+      if (live.status === "fulfilled") {
+        renderKVLive(live.value);
+        renderLiveTables(live.value);
+      } else {
+        liveKV.style.display = "none";
+        LIVE_PL = null;
+        LIVE_PLP = null;
+      }
+
+      if (analysis.status !== "fulfilled") {
+        throw analysis.reason;
+      }
+
+      const data = analysis.value;
+      const rec = recFa(data.recommendation);
+      const reasons = Array.isArray(data.reasons) ? data.reasons : [];
+
+      const reasonsHtml = reasons.length
+        ? `<ul style="padding-right:18px; line-height:1.9; margin: 8px 0 0;">
+              ${reasons.map(r => `<li>${r}</li>`).join("")}
+           </ul>`
+        : `<p class="muted" style="margin:8px 0 0;">دلیلی برای نمایش موجود نیست.</p>`;
+
+      const plText = nf(LIVE_PL);
+      const plpCls = chgClass(LIVE_PLP);
+      const plpText = nf(LIVE_PLP) + "%";
+
+      result.className = "";
+      result.innerHTML = `
+        <!-- ✅ (اصلاح 2) حذف عنوان وسط: "نماد: ..."  -->
+
+        <div class="kv" style="margin-top:12px;">
+          <div class="item">
+            <div class="k">آخرین معامله (pl)</div>
+            <div class="v">${plText}</div>
+          </div>
+
+          <div class="item">
+            <div class="k">درصد تغییر آخرین معامله (plp)</div>
+            <div class="v ${plpCls}">${plpText}</div>
+          </div>
+
+          <div class="item">
+            <div class="k">Trend</div>
+            <div class="v">${trendFa(data.trend)}</div>
+          </div>
+
+          <div class="item">
+            <div class="k">RSI</div>
+            <div class="v">${nf(data.rsi)}</div>
+          </div>
+
+          <div class="item"><div class="k">درصد ریسک</div><div class="v">${nf(data.risk_percent)}%</div></div>
+          <div class="item"><div class="k">حد ضرر</div><div class="v">${nf(data.stop_loss)}</div></div>
+          <div class="item"><div class="k">حد سود</div><div class="v">${nf(data.take_profit)}</div></div>
+          <div class="item"><div class="k">امتیاز (Score)</div><div class="v">${nf(data.score)}</div></div>
+          <div class="item"><div class="k">پیشنهاد</div><div class="v ${rec.cls}">${rec.text}</div></div>
+        </div>
+
+        <hr class="hr" />
+
+        <h4 style="margin:0 0 6px;">🧠 دلایل تحلیل:</h4>
+        ${reasonsHtml}
+      `;
+    } catch (err) {
+      result.className = "";
+      result.innerHTML = `
+        <p style="color:#ef4444; margin:0;">❌ دریافت تحلیل ناموفق بود</p>
+        <p class="muted" style="margin:8px 0 0;">${String(err?.message || err)}</p>
+      `;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "تحلیل کن";
     }
+  });
 
-    function nf(x) {
-        const n = Number(x);
-        if (!Number.isFinite(n)) return String(x ?? "");
-        return n.toLocaleString("fa-IR");
-    }
-
-    async function analyze(symbol) {
-        const url = `/api/analyze/?symbol=${encodeURIComponent(symbol)}`;
-        const res = await fetch(url, { method: "GET" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-
-        const data = await res.json();
-        if (data && data.error) throw new Error(data.error);
-        return data;
-    }
-
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const symbol = (input.value || "").trim();
-        if (!symbol) return;
-
-        btn.disabled = true;
-        btn.textContent = "در حال تحلیل...";
-        result.style.display = "block";
-        result.innerHTML = `<p class="muted">در حال دریافت تحلیل برای <b>${symbol}</b> ...</p>`;
-
-        try {
-            const data = await analyze(symbol);
-
-            const rec = recFa(data.recommendation);
-            const reasons = Array.isArray(data.reasons) ? data.reasons : [];
-
-            const reasonsHtml = reasons.length
-                ? `<ul style="padding-right:18px; line-height:1.9; margin: 8px 0 0;">
-                        ${reasons.map(r => `<li>${r}</li>`).join("")}
-                   </ul>`
-                : `<p class="muted" style="margin:8px 0 0;">دلیلی برای نمایش موجود نیست.</p>`;
-
-            result.innerHTML = `
-                <h3 style="margin:0 0 10px;">نماد: ${data.symbol}</h3>
-
-                <div class="row"><div class="k">قیمت آخر</div><div class="v">${nf(data.last_price)}</div></div>
-                <div class="row"><div class="k">روند بازار</div><div class="v">${trendFa(data.trend)}</div></div>
-                <div class="row"><div class="k">RSI</div><div class="v">${nf(data.rsi)}</div></div>
-                <div class="row"><div class="k">درصد ریسک</div><div class="v">${nf(data.risk_percent)}%</div></div>
-                <div class="row"><div class="k">حد ضرر</div><div class="v">${nf(data.stop_loss)}</div></div>
-                <div class="row"><div class="k">حد سود</div><div class="v">${nf(data.take_profit)}</div></div>
-                <div class="row"><div class="k">امتیاز (Score)</div><div class="v">${nf(data.score)}</div></div>
-
-                <hr style="margin:16px 0;border-color:#1e293b">
-
-                <h4 style="margin:0 0 6px;">🧠 دلایل تحلیل:</h4>
-                ${reasonsHtml}
-
-                <hr style="margin:16px 0;border-color:#1e293b">
-
-                <h3 class="${rec.cls}" style="margin:0;">
-                    📌 پیشنهاد نهایی: ${rec.text}
-                </h3>
-            `;
-        } catch (err) {
-            result.innerHTML = `
-                <p style="color:#ef4444; margin:0;">❌ دریافت تحلیل ناموفق بود</p>
-                <p class="muted" style="margin:8px 0 0;">${String(err?.message || err)}</p>
-            `;
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "تحلیل کن";
-        }
-    });
-
-    // اگر با query وارد شدی، خودکار تحلیل کن
-    const q = new URLSearchParams(location.search);
-    const s = (q.get("symbol") || "").trim();
-    if (s) {
-        input.value = s;
-        form.dispatchEvent(new Event("submit"));
-    }
+  const q = new URLSearchParams(location.search);
+  const s = (q.get("symbol") || "").trim();
+  if (s) {
+    input.value = s;
+    form.dispatchEvent(new Event("submit"));
+  }
 })();
 </script>
 

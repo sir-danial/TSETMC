@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 import math
 
 import numpy as np
@@ -10,7 +10,6 @@ from ta.momentum import RSIIndicator
 from ta.trend import EMAIndicator, ADXIndicator
 from ta.volatility import AverageTrueRange
 
-# اگر نام تابع دیتاپرووایدر شما فرق دارد، فقط این import را مطابق پروژه خودت درست کن
 from core.data_providers.finpy_provider import fetch_daily_history
 
 
@@ -60,11 +59,6 @@ def _clip(v: float, lo: float, hi: float) -> float:
 # SuperTrend (simple)
 # ---------------------------
 def _supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> Tuple[pd.Series, pd.Series]:
-    """
-    Returns:
-      st: SuperTrend line
-      direction: 1 (bullish) / -1 (bearish)
-    """
     high = df["High"].astype(float)
     low = df["Low"].astype(float)
     close = df["Close"].astype(float)
@@ -77,7 +71,6 @@ def _supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> 
     st = pd.Series(index=df.index, dtype=float)
     direction = pd.Series(index=df.index, dtype=int)
 
-    # init
     st.iloc[0] = upperband.iloc[0]
     direction.iloc[0] = 1
 
@@ -90,13 +83,11 @@ def _supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> 
         prev_upper = upperband.iloc[i - 1]
         prev_lower = lowerband.iloc[i - 1]
 
-        # bands "final"
         if curr_upper > prev_upper and close.iloc[i - 1] <= prev_upper:
             curr_upper = prev_upper
         if curr_lower < prev_lower and close.iloc[i - 1] >= prev_lower:
             curr_lower = prev_lower
 
-        # direction
         if prev_st == prev_upper:
             curr_dir = 1 if close.iloc[i] > curr_upper else -1
         else:
@@ -112,11 +103,6 @@ def _supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> 
 # Structure (very light)
 # ---------------------------
 def _market_structure(df: pd.DataFrame, lookback: int = 40) -> Dict[str, Any]:
-    """
-    Very lightweight HH/HL/LH/LL detection using recent swing approximation.
-    Output is JSON-safe.
-    """
-    close = df["Close"].astype(float)
     high = df["High"].astype(float)
     low = df["Low"].astype(float)
 
@@ -127,7 +113,6 @@ def _market_structure(df: pd.DataFrame, lookback: int = 40) -> Dict[str, Any]:
     h = high.tail(w).reset_index(drop=True)
     l = low.tail(w).reset_index(drop=True)
 
-    # pick "recent extremes" in two halves to estimate swing
     mid = w // 2
     h1, h2 = float(h.iloc[:mid].max()), float(h.iloc[mid:].max())
     l1, l2 = float(l.iloc[:mid].min()), float(l.iloc[mid:].min())
@@ -137,7 +122,6 @@ def _market_structure(df: pd.DataFrame, lookback: int = 40) -> Dict[str, Any]:
     hl = l2 > l1
     lh = h2 < h1
 
-    # infer state
     if hh and hl:
         state = "uptrend"
     elif ll and lh:
@@ -154,11 +138,54 @@ def _slope_percent_per_bar(series: pd.Series, window: int = 30) -> float:
         return 0.0
     y = s.tail(window).values
     x = np.arange(len(y))
-    # simple linear regression slope
     denom = (x.var() if x.var() != 0 else 1.0)
     slope = np.cov(x, y, bias=True)[0, 1] / denom
     last = float(y[-1]) if float(y[-1]) != 0 else 1.0
     return (slope / last) * 100.0
+
+
+# ---------------------------
+# Live helpers (AllSymbols)
+# ---------------------------
+def _live_power_ratio(live: Dict[str, Any]) -> Optional[float]:
+    """
+    نسبت قدرت خریدار حقیقی به فروش حقیقی (بر اساس حجم)
+    > 1.2 مثبت، < 0.8 منفی
+    """
+    if not live:
+        return None
+    buy_i = _f(live.get("Buy_I_Volume"), 0.0)
+    sell_i = _f(live.get("Sell_I_Volume"), 0.0)
+    if buy_i <= 0 or sell_i <= 0:
+        return None
+    return buy_i / sell_i
+
+
+def _live_orderbook_pressure(live: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    تفسیر ساده صف خرید/فروش از لایه 1
+    qd1/pd1/zd1 (buy)
+    qo1/po1/zo1 (sell)
+    """
+    if not live:
+        return {"buy_queue": 0.0, "sell_queue": 0.0, "signal": "unknown"}
+
+    qd1 = _f(live.get("qd1"), 0.0)
+    qo1 = _f(live.get("qo1"), 0.0)
+    pd1 = _f(live.get("pd1"), 0.0)
+    po1 = _f(live.get("po1"), 0.0)
+
+    # اندازه صف را با حجم ردیف اول می‌گیریم
+    buy_q = qd1
+    sell_q = qo1
+
+    signal = "neutral"
+    if buy_q > sell_q * 1.5 and pd1 > 0:
+        signal = "buy_pressure"
+    elif sell_q > buy_q * 1.5 and po1 > 0:
+        signal = "sell_pressure"
+
+    return {"buy_queue": buy_q, "sell_queue": sell_q, "signal": signal}
 
 
 # ---------------------------
@@ -179,10 +206,8 @@ def _score_engine(
     rr: float,
     atr_pct: float,
     st_dir: int,
+    live: Optional[Dict[str, Any]] = None,
 ) -> Tuple[int, str, List[str], Dict[str, float]]:
-    """
-    Returns: (score_0_100, recommendation, reasons[], component_scores)
-    """
     reasons: List[str] = []
     comp: Dict[str, float] = {}
 
@@ -221,6 +246,23 @@ def _score_engine(
         trend_score += 2
         reasons.append(f"ADX حدود {round(adx, 1)} است (روند ضعیف/رنج).")
 
+    # --- Live confirmation / contradiction (NEW) ---
+    if live:
+        pl = _f(live.get("pl"), 0.0)
+        pc = _f(live.get("pc"), 0.0)
+        py = _f(live.get("py"), 0.0)
+        plc = _f(live.get("plc"), 0.0)
+
+        # اگر روند صعودی ولی قیمت آخر زیر پایانی و تغییر منفی باشد => کاهش امتیاز
+        if ema_bull and pc > 0 and pl > 0 and (pl < pc) and (plc < 0):
+            trend_score -= 3
+            reasons.append("⚠️ با وجود روند تکنیکال صعودی، قیمت آخر زیر پایانی و تغییر منفی است (تایید لایو ضعیف).")
+
+        # اگر روند صعودی و قیمت آخر بالای دیروز + تغییر مثبت => تقویت
+        if ema_bull and py > 0 and pl > 0 and (pl > py) and (plc > 0):
+            trend_score += 2
+            reasons.append("✅ لایو: قیمت آخر بالاتر از دیروز و تغییر مثبت است (تایید روند).")
+
     trend_score = _clip(trend_score, 0, 30)
     comp["trend"] = trend_score
 
@@ -234,7 +276,7 @@ def _score_engine(
         reasons.append("RSI بالاتر از ۶۵ است (قدرت خرید خوب، اما نزدیک اشباع).")
     elif rsi > 75:
         mom_score += 6
-        reasons.append("RSI خیلی بالا است (احتمال اصلاح/فشار فروش کوتاه‌مدت).")
+        reasons.append("RSI خیلی بالا است (احتمال اصلاح کوتاه‌مدت).")
     elif 35 <= rsi < 50:
         mom_score += 10
         reasons.append("RSI زیر ۵۰ است (قدرت خرید متوسط/ضعیف).")
@@ -242,7 +284,6 @@ def _score_engine(
         mom_score += 7
         reasons.append("RSI پایین است (می‌تواند فرصت برگشت باشد اما پرریسک).")
 
-    # DI direction bonus
     if pdi > mdi:
         mom_score += 5
         reasons.append("+DI بالاتر از -DI است (غلبه قدرت خرید).")
@@ -250,13 +291,24 @@ def _score_engine(
         mom_score += 2
         reasons.append("-DI بالاتر از +DI است (غلبه قدرت فروش).")
 
-    # Supertrend direction bonus
     if st_dir == 1:
         mom_score += 2
         reasons.append("سوپرترند در فاز صعودی است.")
     else:
-        mom_score += 0
         reasons.append("سوپرترند در فاز نزولی است.")
+
+    # --- Live real money ratio (NEW) ---
+    if live:
+        ratio = _live_power_ratio(live)
+        if ratio is not None:
+            if ratio >= 1.2:
+                mom_score += 3
+                reasons.append(f"✅ قدرت خریدار حقیقی بالاست (Buy_I/Sell_I≈{round(ratio, 2)}).")
+            elif ratio <= 0.8:
+                mom_score -= 2
+                reasons.append(f"⚠️ قدرت فروش حقیقی بالاتر است (Buy_I/Sell_I≈{round(ratio, 2)}).")
+            else:
+                reasons.append(f"قدرت خریدار/فروش حقیقی متعادل است (Buy_I/Sell_I≈{round(ratio, 2)}).")
 
     mom_score = _clip(mom_score, 0, 25)
     comp["momentum"] = mom_score
@@ -279,6 +331,16 @@ def _score_engine(
         struct_score += 12
         reasons.append("ساختار بازار رنج/نامشخص است (به شکست سطح‌ها حساس).")
 
+    # --- Live orderbook pressure (NEW) ---
+    if live:
+        ob = _live_orderbook_pressure(live)
+        if ob.get("signal") == "buy_pressure":
+            struct_score += 1.5
+            reasons.append("✅ فشار تقاضا در سفارشات (سطح ۱) بیشتر از عرضه است.")
+        elif ob.get("signal") == "sell_pressure":
+            struct_score -= 1.5
+            reasons.append("⚠️ فشار عرضه در سفارشات (سطح ۱) بیشتر از تقاضاست.")
+
     struct_score = _clip(struct_score, 0, 20)
     comp["structure"] = struct_score
 
@@ -300,9 +362,8 @@ def _score_engine(
     rr_score = _clip(rr_score, 0, 15)
     comp["rr"] = rr_score
 
-    # 5) Volatility (10) - ATR%
+    # 5) Volatility (10)
     vol_score = 0.0
-    # ATR% = ATR / price * 100
     if atr_pct <= 2.0:
         vol_score += 9
         reasons.append("نوسان (ATR%) پایین/مناسب است (ریسک کنترل‌شده).")
@@ -319,12 +380,10 @@ def _score_engine(
     vol_score = _clip(vol_score, 0, 10)
     comp["volatility"] = vol_score
 
-    # total score
     total = trend_score + mom_score + struct_score + rr_score + vol_score
     score = int(round(_clip(total, 0, 100)))
 
     # Recommendation
-    # Base by score, then adjust by trend direction (ema + supertrend)
     if score >= 75 and (ema_bull or st_dir == 1):
         rec = "buy"
         reasons.append("امتیاز کلی بالا است و شرایط کلی به نفع خرید است.")
@@ -341,7 +400,7 @@ def _score_engine(
 # ---------------------------
 # Main public function
 # ---------------------------
-def analyze_symbol(symbol: str) -> Dict[str, Any]:
+def analyze_symbol(symbol: str, live: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     symbol = (symbol or "").strip()
     if not symbol:
         return {"error": "symbol is required"}
@@ -350,22 +409,18 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
     if df is None or df.empty:
         return {"error": "no data"}
 
-    # Keep last 300 bars for stability/perf
     df = df.tail(300).copy().reset_index(drop=True)
 
-    # Ensure columns exist
     required_cols = {"Open", "High", "Low", "Close"}
     if not required_cols.issubset(set(df.columns)):
         return {"error": "bad data columns", "columns": list(df.columns)}
 
-    # Use raw close for decision/display
     close = df["Close"].astype(float)
     high = df["High"].astype(float)
     low = df["Low"].astype(float)
 
     last_price = _f(close.iloc[-1])
 
-    # Indicators
     ema20 = EMAIndicator(close=close, window=20).ema_indicator()
     ema50 = EMAIndicator(close=close, window=50).ema_indicator()
     ema100 = EMAIndicator(close=close, window=100).ema_indicator()
@@ -381,7 +436,6 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
 
     st, st_dir = _supertrend(df, period=10, multiplier=3.0)
 
-    # latest values
     e20 = _f(ema20.iloc[-1])
     e50 = _f(ema50.iloc[-1])
     e100 = _f(ema100.iloc[-1])
@@ -393,13 +447,9 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
     st_last = _f(st.iloc[-1])
     st_dir_last = _i(st_dir.iloc[-1], default=1)
 
-    # Slope (last 30 bars)
     slope_pct = _f(_slope_percent_per_bar(close, window=30))
-
-    # Structure
     struct = _market_structure(df, lookback=40)
 
-    # Trend label (simple)
     if e20 > e50 > e100:
         trend = "up"
     elif e20 < e50 < e100:
@@ -407,15 +457,12 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
     else:
         trend = "range"
 
-    # Stop/TP (keep simple & consistent)
     atr_pct = (atr_last / last_price * 100.0) if last_price > 0 else 0.0
 
-    # Default: use SuperTrend as protective line when possible
     if trend == "up" or st_dir_last == 1:
         stop_loss = min(st_last, last_price - 2.0 * atr_last)
         take_profit = last_price + 2.0 * atr_last
     elif trend == "down" or st_dir_last == -1:
-        # for "sell" idea: stop above
         stop_loss = max(st_last, last_price + 2.0 * atr_last)
         take_profit = max(0.0, last_price - 2.0 * atr_last)
     else:
@@ -425,17 +472,14 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
     stop_loss = _f(stop_loss)
     take_profit = _f(take_profit)
 
-    # Risk percent (distance to stop)
     risk_percent = 0.0
     if last_price > 0:
         risk_percent = abs((last_price - stop_loss) / last_price) * 100.0
 
-    # RR ratio
     reward = abs(take_profit - last_price)
     risk = abs(last_price - stop_loss)
     rr = (reward / risk) if risk > 0 else 0.0
 
-    # Score engine
     score, recommendation, reasons, comp_scores = _score_engine(
         last_price=last_price,
         e20=e20,
@@ -450,12 +494,26 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
         rr=rr,
         atr_pct=atr_pct,
         st_dir=st_dir_last,
+        live=live,
     )
 
-    # Keep return_percent as earlier placeholder (0) unless you already compute it elsewhere
     return_percent = 0.0
 
-    # IMPORTANT: JSON-safe output
+    # live summary (for UI)
+    live_summary = None
+    if live:
+        live_summary = {
+            "l18": _s(live.get("l18")),
+            "l30": _s(live.get("l30")),
+            "cs": _s(live.get("cs")),
+            "time": _s(live.get("time")),
+            "pl": _f(live.get("pl"), 0.0),
+            "pc": _f(live.get("pc"), 0.0),
+            "py": _f(live.get("py"), 0.0),
+            "plc": _f(live.get("plc"), 0.0),
+            "plp": _f(live.get("plp"), 0.0),
+        }
+
     out: Dict[str, Any] = {
         "symbol": symbol,
         "last_price": round(last_price, 2),
@@ -465,10 +523,10 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
         "return_percent": round(_f(return_percent), 2),
         "stop_loss": round(stop_loss, 2),
         "take_profit": round(take_profit, 2),
-        "recommendation": recommendation,   # buy/sell/hold
+        "recommendation": recommendation,
         "score": _i(score),
         "reasons": [_s(r) for r in reasons],
-        # metrics (for later charts / debugging)
+        "live": live_summary,
         "metrics": {
             "ema20": round(_f(e20), 2),
             "ema50": round(_f(e50), 2),
@@ -490,19 +548,6 @@ def analyze_symbol(symbol: str) -> Dict[str, Any]:
                 "lh": bool(struct.get("lh")),
                 "ll": bool(struct.get("ll")),
             },
-        },
-        "lookbacks": {
-            "data_tail_bars": 300,
-            "rsi": 14,
-            "adx": 14,
-            "atr": 14,
-            "ema20": 20,
-            "ema50": 50,
-            "ema100": 100,
-            "supertrend_period": 10,
-            "supertrend_multiplier": 3.0,
-            "slope_window": 30,
-            "structure_lookback": 40,
         },
     }
 

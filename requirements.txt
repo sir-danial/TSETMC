@@ -6,3 +6,8 @@ numpy
 ta
 psycopg2-binary
 requests
+
+redis>=5.0
+django-redis>=5.4
+django-crontab>=0.7
+

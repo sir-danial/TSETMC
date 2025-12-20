@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # --------------------------------------------------
 # Base
@@ -11,7 +13,7 @@ SECRET_KEY = os.getenv(
     "django-insecure-dev-key-change-me"
 )
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -128,5 +130,24 @@ if not BRS_API_KEY and not DEBUG:
     raise RuntimeError("BRS_API_KEY environment variable is required")
 
 
+# settings.py
+
+INSTALLED_APPS += [
+    "django_crontab",
+]
+
+
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 
