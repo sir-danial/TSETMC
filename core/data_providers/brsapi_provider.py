@@ -52,33 +52,35 @@ def _get_json(url: str, params: dict) -> object:
 # TSETMC Index (type=1/2/3)
 # =========================
 def fetch_index(type_id: int):
-    """
-    کش Redis:
-    - فقط بین 09:01 تا 12:40 اجازه رفرش داریم
-    - TTL = 5 دقیقه
-    - خارج از بازه: آخرین کش را می‌دهیم و رفرش نمی‌کنیم
-    """
     type_id = int(type_id)
-    cache_key = f"brsapi:tsetmc:index:{type_id}"
+    if type_id not in (1, 2, 3):
+        raise ValueError("Invalid index type")
 
-    TTL_SECONDS = 10 * 60  # 10 min
+    cache_key = f"brsapi:tsetmc:index:{type_id}"
+    TTL_SECONDS = 10 * 60  # ⬅️ طبق خواسته‌ات: هر 10 دقیقه
     REFRESH_WINDOW = (9, 1), (12, 40)
 
     cached = cache.get(cache_key)
     if cached is not None:
-        # اگر در بازه مجاز هستیم، می‌گذاریم TTL تصمیم بگیرد:
-        # (با expire خود Redis)
         return cached
 
-    # کش خالی است. اگر خارج از بازه هستیم، باز هم یک بار می‌گیریم تا صفحه خالی نماند
-    # ولی با TTL بلندتر که تا فردا بماند.
     in_win = _in_window(*REFRESH_WINDOW)
-    ttl = TTL_SECONDS if in_win else 24 * 60 * 60  # اگر خارج از ساعت بازار: 24h
+    ttl = TTL_SECONDS if in_win else 24 * 60 * 60
 
-    params = {"key": settings.BRS_API_KEY, "type": type_id}
+    params = {
+        "key": settings.BRS_API_KEY,
+        "type": str(type_id),  # ⬅️ خیلی مهم: STRING
+    }
+
     data = _get_json(BASE_URL, params=params)
+
+    # sanity check
+    if not data:
+        raise RuntimeError("Empty index response")
+
     cache.set(cache_key, data, timeout=ttl)
     return data
+
 
 
 # =========================
