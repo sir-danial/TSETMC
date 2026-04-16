@@ -27,31 +27,133 @@
     }
 
     :root{
-      --bg:#0b1220;
-      --card:#0a0f1a;
-      --card2:#0b1423;
+      --bg:#0b1120;
+      --card:#0d1526;
+      --card2:#0f172a;
       --border:#1e293b;
-      --text:#e5e7eb;
-      --muted:#94a3b8;
-      --blue:#2563eb;
-      --green:#22c55e;
+      --text:#e2e8f0;
+      --muted:#64748b;
+      --blue:#3b82f6;
+      --blue-glow: rgba(59,130,246,.25);
+      --green:#10b981;
       --red:#ef4444;
-      --yellow:#eab308;
+      --yellow:#f59e0b;
+      --glass: rgba(15,23,42,.72);
+      --glass-border: rgba(148,163,184,.12);
     }
 
-    *{ box-sizing:border-box; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+
     body{
-      margin:0;
-      padding:28px;
       font-family:"Vazir", Tahoma, sans-serif;
-      background: radial-gradient(1200px 600px at 60% -10%, rgba(37,99,235,.20), transparent 60%),
-                  radial-gradient(900px 500px at 10% 0%, rgba(34,197,94,.12), transparent 55%),
-                  var(--bg);
+      background: var(--bg);
       color:var(--text);
+      min-height:100vh;
+      overflow-x: hidden;
     }
 
-    .container{ max-width:1200px; margin:0 auto; }
+    /* ---------- Ambient background ---------- */
+    body::before{
+      content:'';
+      position:fixed;
+      inset:0;
+      background:
+        radial-gradient(ellipse 900px 500px at 70% -5%, rgba(59,130,246,.15), transparent 70%),
+        radial-gradient(ellipse 600px 400px at 15% 5%, rgba(16,185,129,.10), transparent 60%),
+        radial-gradient(ellipse 500px 500px at 90% 80%, rgba(139,92,246,.06), transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
 
+    /* ---------- Custom scrollbar ---------- */
+    ::-webkit-scrollbar{ width:6px; height:6px; }
+    ::-webkit-scrollbar-track{ background:transparent; }
+    ::-webkit-scrollbar-thumb{ background:rgba(100,116,139,.35); border-radius:99px; }
+    ::-webkit-scrollbar-thumb:hover{ background:rgba(100,116,139,.55); }
+    *{ scrollbar-width:thin; scrollbar-color: rgba(100,116,139,.35) transparent; }
+
+    /* ---------- Header / Navbar ---------- */
+    .navbar{
+      position:sticky;
+      top:0;
+      z-index:100;
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      background: var(--glass);
+      border-bottom:1px solid var(--glass-border);
+      padding:0 28px;
+    }
+    .navbar-inner{
+      max-width:1240px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      height:56px;
+    }
+    .nav-brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:17px;
+      font-weight:700;
+      color:#f1f5f9;
+      text-decoration:none;
+    }
+    .nav-brand .logo{
+      width:32px; height:32px;
+      background: linear-gradient(135deg, var(--blue), #8b5cf6);
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:16px;
+      color:#fff;
+    }
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .nav-links a{
+      color:var(--muted);
+      text-decoration:none;
+      font-size:13px;
+      padding:8px 14px;
+      border-radius:10px;
+      transition: all .2s;
+    }
+    .nav-links a:hover,
+    .nav-links a.active{
+      color:#e2e8f0;
+      background:rgba(255,255,255,.06);
+    }
+
+    /* ---------- Main content ---------- */
+    .container{
+      max-width:1240px;
+      margin:0 auto;
+      padding:24px 28px 40px;
+      position:relative;
+      z-index:1;
+    }
+
+    /* ---------- Fade-in animation ---------- */
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(18px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+    .fade-in{
+      animation: fadeUp .5s ease both;
+    }
+    .fade-in:nth-child(1){ animation-delay:.05s; }
+    .fade-in:nth-child(2){ animation-delay:.12s; }
+    .fade-in:nth-child(3){ animation-delay:.19s; }
+    .fade-in:nth-child(4){ animation-delay:.26s; }
+    .fade-in:nth-child(5){ animation-delay:.33s; }
+    .fade-in:nth-child(6){ animation-delay:.40s; }
+
+    /* ---------- Grid ---------- */
     .grid{
       display:grid;
       grid-template-columns: 1.1fr 1fr 1fr;
@@ -59,21 +161,27 @@
       align-items:stretch;
     }
 
+    /* ---------- Card ---------- */
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card);
-      border:1px solid rgba(30,41,59,.75);
-      border-radius:18px;
-      padding:18px;
-      box-shadow: 0 0 35px rgba(0,0,0,.35);
-      min-height: 210px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,0) 100%), var(--card);
+      border:1px solid var(--glass-border);
+      border-radius:16px;
+      padding:20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.25);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .card:hover{
+      transform: translateY(-3px);
+      box-shadow: 0 8px 36px rgba(0,0,0,.35), 0 0 0 1px rgba(59,130,246,.08);
     }
 
     .card h3{
-      margin:0 0 14px;
-      font-size:18px;
+      margin:0 0 16px;
+      font-size:16px;
       display:flex;
       align-items:center;
       gap:8px;
+      color:#f1f5f9;
     }
 
     .muted{ color:var(--muted); font-size:13px; }
@@ -81,9 +189,9 @@
     /* ---------- Clock ---------- */
     #clock-card .clockWrap{
       display: flex;
-      flex-direction: column;      /* عمودی */
-      align-items: center;         /* وسط افقی */
-      justify-content: center;     /* وسط عمودی */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       gap: 14px;
       text-align: center;
     }
@@ -94,47 +202,45 @@
       align-items: center;
     }
 
-    #clock-card .btn{
-      max-width: 260px;            /* دکمه خیلی پهن نشه */
-    }
+    #clock-card .btn{ max-width: 260px; }
 
     .analogFrame{
-      width:180px;
-      height:180px;
+      width:160px;
+      height:160px;
       border-radius:999px;
       overflow:hidden;
-      border:1px solid rgba(148,163,184,.25);
-      box-shadow: inset 0 0 25px rgba(0,0,0,.55);
+      border:1px solid rgba(148,163,184,.15);
+      box-shadow: 0 0 30px rgba(59,130,246,.08), inset 0 0 20px rgba(0,0,0,.5);
       background:#070b12;
       display:flex;
       align-items:center;
       justify-content:center;
     }
     .analogFrame iframe{
-      width:160px;
-      height:160px;
+      width:150px;
+      height:150px;
       border:0;
     }
 
-    .digital{
-      flex:1;
-      min-width:220px;
-    }
+    .digital{ flex:1; min-width:220px; }
     .digital .time{
-      font-size:44px;
+      font-size:42px;
       line-height:1.1;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
       font-weight:700;
+      background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
     }
     .digital .date{
       margin-top:6px;
-      font-size:16px;
+      font-size:15px;
       color:var(--muted);
     }
     .digital .weekday{
       margin-top:2px;
-      font-size:14px;
-      color:rgba(229,231,235,.85);
+      font-size:13px;
+      color:rgba(229,231,235,.7);
     }
 
     .btn{
@@ -143,292 +249,321 @@
       align-items:center;
       justify-content:center;
       gap:8px;
-      padding:10px 12px;
+      padding:10px 16px;
       border-radius:12px;
-      border:1px solid rgba(37,99,235,.45);
-      background: rgba(37,99,235,.15);
-      color:#dbeafe;
+      border:1px solid rgba(59,130,246,.3);
+      background: linear-gradient(135deg, rgba(59,130,246,.15), rgba(139,92,246,.10));
+      color:#bfdbfe;
       cursor:pointer;
       text-decoration:none;
       font-weight:700;
+      font-size:13px;
       width:100%;
-      transition:.15s ease;
+      transition: all .2s ease;
     }
-    .btn:hover{ background: rgba(37,99,235,.25); }
+    .btn:hover{
+      background: linear-gradient(135deg, rgba(59,130,246,.25), rgba(139,92,246,.18));
+      border-color: rgba(59,130,246,.5);
+      box-shadow: 0 0 20px rgba(59,130,246,.15);
+    }
 
-    /* ---------- Index boxes ---------- */
+    /* ---------- Index boxes (KV) ---------- */
     .kv{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:10px 14px;
+      gap:8px;
     }
     .item{
       padding:10px 12px;
-      border:1px solid rgba(30,41,59,.75);
-      border-radius:14px;
-      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+      border:1px solid var(--glass-border);
+      border-radius:12px;
+      background: rgba(255,255,255,.02);
+      transition: background .2s;
     }
-    .k{ color:var(--muted); font-size:12px; }
-    .v{ margin-top:4px; font-size:16px; font-weight:700; }
+    .item:hover{ background: rgba(255,255,255,.04); }
+    .k{ color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
+    .v{ margin-top:4px; font-size:15px; font-weight:700; }
     .chg.pos{ color: var(--green); }
     .chg.neg{ color: var(--red); }
     .chg.neu{ color: var(--yellow); }
 
-    /* ---------- Table (Selected indices) ---------- */
+    /* ---------- Skeleton loading ---------- */
+    @keyframes shimmer{
+      0%{ background-position: -200% 0; }
+      100%{ background-position: 200% 0; }
+    }
+    .skeleton{
+      background: linear-gradient(90deg, rgba(100,116,139,.08) 25%, rgba(100,116,139,.18) 50%, rgba(100,116,139,.08) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s ease-in-out infinite;
+      border-radius:6px;
+      height:18px;
+      width:70%;
+    }
+    .skeleton.sm{ height:12px; width:50%; margin-top:4px; }
+
+    /* ---------- Table ---------- */
     .tableCard{
       margin-top:18px;
       background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card2);
-      border:1px solid rgba(30,41,59,.75);
-      border-radius:18px;
-      padding:18px;
-      box-shadow: 0 0 35px rgba(0,0,0,.35);
+      border:1px solid var(--glass-border);
+      border-radius:16px;
+      padding:20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.25);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .tableCard:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.3);
     }
 
-    /* ✅ اسکرول + مرز و بک‌گراند اینجاست تا sticky خراب نشه */
     .scroll{
       max-height: 360px;
       overflow:auto;
-      border-radius:14px;
-      border:1px solid rgba(30,41,59,.75);
-      background: rgba(2,6,23,.25);
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background: rgba(2,6,23,.3);
     }
 
-    /* ✅ wrapper برای پایداری sticky */
-    .tableWrap{
-      min-width: 100%;
-    }
+    .tableWrap{ min-width: 100%; }
 
     table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      border-radius:14px;
-      /* ❌ overflow:hidden باعث خراب شدن sticky میشه، حذف شد */
+      border-radius:12px;
     }
 
     thead th{
       position: sticky;
       top: 0;
       z-index: 10;
-      background: rgba(2,6,23,.92);
-      backdrop-filter: blur(6px);
-
-      color:#e5e7eb;
+      background: rgba(15,23,42,.95);
+      backdrop-filter: blur(8px);
+      color:#94a3b8;
       font-weight:700;
-      font-size:13px;
-      padding:10px 12px;
-      border-bottom:1px solid rgba(30,41,59,.75);
+      font-size:12px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--glass-border);
       white-space:nowrap;
+      text-transform:uppercase;
+      letter-spacing:.5px;
     }
     tbody td{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(30,41,59,.55);
-      color: rgba(229,231,235,.92);
+      padding:11px 14px;
+      border-bottom:1px solid rgba(30,41,59,.4);
+      color: rgba(226,232,240,.9);
       font-size:13px;
       white-space:nowrap;
+      transition: background .15s;
     }
-    tbody tr:hover td{ background: rgba(37,99,235,.06); }
+    tbody tr:hover td{ background: rgba(59,130,246,.06); }
     tbody tr:last-child td{ border-bottom:none; }
 
     .footerLine{
-      margin-top:10px;
+      margin-top:12px;
       display:flex;
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
       color:var(--muted);
-      font-size:12px;
+      font-size:11px;
     }
 
     @media (max-width: 980px){
       .grid{ grid-template-columns: 1fr; }
-      .digital .time{ font-size:40px; }
+      .digital .time{ font-size:36px; }
+      .navbar-inner{ padding:0; }
+      .container{ padding:18px 16px 30px; }
     }
   </style>
 </head>
 
 <body>
+
+<!-- ====== Navbar ====== -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="nav-brand" href="/">
+      <span class="logo">B</span>
+      داشبورد بازار
+    </a>
+    <div class="nav-links">
+      <a href="/" class="active">داشبورد</a>
+      <a href="/symbol/">تحلیل نماد</a>
+    </div>
+  </div>
+</nav>
+
 <div class="container">
-  <a class="weatherwidget-io" href="https://forecast7.com/en/35d6951d39/tehran/" data-label_1="TEHRAN" data-label_2="IRAN" data-theme="dark" >TEHRAN IRAN</a>
-    <script>
-      !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-    </script>
-</div>
 
-  <div class="container">
+  <div class="grid">
 
-    <div class="grid">
+    <!-- (چپ) فرابورس -->
+    <div class="card fade-in">
+      <h3>📈 شاخص فرابورس</h3>
 
-      <!-- (چپ) فرابورس -->
-      <div class="card">
-        <h3>📈 شاخص فرابورس</h3>
-
-        <div class="kv" id="index-2">
-          <div class="item"><div class="k">وضعیت</div><div class="v muted">در حال دریافت...</div></div>
-          <div class="item"><div class="k">شاخص</div><div class="v">—</div></div>
-
-          <div class="item"><div class="k">تغییر</div><div class="v chg neu">—</div></div>
-          <div class="item"><div class="k">ارزش بازار پایه (mv_base)</div><div class="v">—</div></div>
-
-          <div class="item"><div class="k">ارزش بازار اول و دوم (mv_main)</div><div class="v">—</div></div>
-          <div class="item"><div class="k">تعداد معاملات (tno)</div><div class="v">—</div></div>
-
-          <div class="item"><div class="k">حجم معاملات (tvol)</div><div class="v">—</div></div>
-          <div class="item"><div class="k">ارزش معاملات (tval)</div><div class="v">—</div></div>
-        </div>
-
-        <div class="footerLine">
-          <div id="idx2-upd">آخرین بروزرسانی: —</div>
-          <div></div>
-        </div>
-      </div>
-
-      <!-- (وسط) بورس -->
-      <div class="card">
-        <h3>📊 شاخص بورس</h3>
-
-        <div class="kv" id="index-1">
-          <div class="item"><div class="k">وضعیت</div><div class="v muted">در حال دریافت...</div></div>
-          <div class="item"><div class="k">شاخص کل</div><div class="v">—</div></div>
-
-          <div class="item"><div class="k">تغییر</div><div class="v chg neu">—</div></div>
-          <div class="item"><div class="k">ارزش بازار (mv)</div><div class="v">—</div></div>
-
-          <div class="item"><div class="k">تعداد معاملات (tno)</div><div class="v">—</div></div>
-          <div class="item"><div class="k">حجم معاملات (tvol)</div><div class="v">—</div></div>
-
-          <div class="item"><div class="k">ارزش معاملات (tval)</div><div class="v">—</div></div>
-          <div class="item"><div class="k"></div><div class="v"></div></div>
-        </div>
-
-        <div class="footerLine">
-          <div id="idx1-upd">آخرین بروزرسانی: —</div>
-          <div></div>
-        </div>
-      </div>
-
-      <!-- (راست) Clock Card -->
-      <div class="card" id="clock-card">
-        <h3>🕒 تهران</h3>
-
-        <div class="clockWrap">
-          <div class="analogFrame" aria-label="ساعت عقربه‌ای">
-            <iframe
-              src="https://free.timeanddate.com/clock/ia7ed06t/n246/szw160/szh160/hocddd/hbw0/hfc000/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw8/mqd100/mhcfff/mhl15/mhw4/mhd100/mmv0/hhcff9/hmcff9"
-              frameborder="0"
-              width="160"
-              height="160"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-              title="Tehran Clock"
-            ></iframe>
-          </div>
-
-          <div class="digital">
-            <div class="time" id="teh-time">--:--:--</div>
-            <div class="date" id="teh-date">----</div>
-            <div class="weekday" id="teh-weekday">----</div>
-
-            <a class="btn" href="/symbol/">تحلیل نماد بورس</a>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ====== (NEW) Gold & Currency box ====== -->
-    <div class="tableCard" id="goldcurrency-card">
-      <h3 style="margin:0 0 12px;">💰 ارز و طلا</h3>
-
-      <div class="scroll">
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>نام</th>
-                <th>قیمت</th>
-                <th>تغییر</th>
-                <th>%</th>
-                <th>واحد</th>
-              </tr>
-            </thead>
-            <tbody id="goldcurrency-body">
-              <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="kv" id="index-2">
+        <div class="item"><div class="k">وضعیت</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">شاخص</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">تغییر</div><div class="v chg neu"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">ارزش بازار پایه</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">ارزش بازار اول و دوم</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">تعداد معاملات</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">حجم معاملات</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">ارزش معاملات</div><div class="v"><div class="skeleton"></div></div></div>
       </div>
 
       <div class="footerLine">
-        <div id="goldcurrency-upd">آخرین بروزرسانی: —</div>
-        <div></div>
+        <div id="idx2-upd">آخرین بروزرسانی: —</div>
       </div>
     </div>
 
-    <!-- ====== (NEW) Crypto box ====== -->
-    <div class="tableCard" id="crypto-card">
-      <h3 style="margin:0 0 12px;">🪙 رمز ارز</h3>
+    <!-- (وسط) بورس -->
+    <div class="card fade-in">
+      <h3>📊 شاخص بورس</h3>
 
-      <div class="scroll">
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>نام</th>
-                <th>قیمت</th>
-                <th>تغییر</th>
-                <th>%</th>
-                <th>واحد</th>
-              </tr>
-            </thead>
-            <tbody id="crypto-body">
-              <tr><td colspan="5" class="muted">در حال دریافت...</td></tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="kv" id="index-1">
+        <div class="item"><div class="k">وضعیت</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">شاخص کل</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">تغییر</div><div class="v chg neu"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">ارزش بازار</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">تعداد معاملات</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">حجم معاملات</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k">ارزش معاملات</div><div class="v"><div class="skeleton"></div></div></div>
+        <div class="item"><div class="k"></div><div class="v"></div></div>
       </div>
 
       <div class="footerLine">
-        <div id="crypto-upd">آخرین بروزرسانی: —</div>
-        <div></div>
+        <div id="idx1-upd">آخرین بروزرسانی: —</div>
       </div>
     </div>
 
-    <!-- Selected indices table -->
-    <div class="tableCard">
-      <h3 style="margin:0 0 12px;">🧾 جدول شاخص‌های منتخب</h3>
+    <!-- (راست) Clock Card -->
+    <div class="card fade-in" id="clock-card">
+      <h3>🕒 تهران</h3>
 
-      <div class="scroll">
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>نام</th>
-                <th>مقدار</th>
-                <th>تغییر</th>
-                <th>%</th>
-                <th>کمترین</th>
-                <th>بیشترین</th>
-              </tr>
-            </thead>
-            <tbody id="selected-body">
-              <tr><td colspan="6" class="muted">در حال دریافت...</td></tr>
-            </tbody>
-          </table>
+      <div class="clockWrap">
+        <div class="analogFrame" aria-label="ساعت عقربه‌ای">
+          <iframe
+            src="https://free.timeanddate.com/clock/ia7ed06t/n246/szw160/szh160/hocddd/hbw0/hfc000/cf100/hgr0/fav0/fiv0/mqcfff/mql15/mqw8/mqd100/mhcfff/mhl15/mhw4/mhd100/mmv0/hhcff9/hmcff9"
+            frameborder="0"
+            width="150"
+            height="150"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            title="Tehran Clock"
+          ></iframe>
         </div>
-      </div>
 
-      <div class="footerLine">
-        <div id="idx3-upd">آخرین بروزرسانی: —</div>
-        <div></div>
+        <div class="digital">
+          <div class="time" id="teh-time">--:--:--</div>
+          <div class="date" id="teh-date">----</div>
+          <div class="weekday" id="teh-weekday">----</div>
+
+          <a class="btn" href="/symbol/">📊 تحلیل نماد بورس</a>
+        </div>
       </div>
     </div>
 
   </div>
 
+  <!-- ====== Gold & Currency ====== -->
+  <div class="tableCard fade-in" id="goldcurrency-card">
+    <h3 style="margin:0 0 14px; font-size:16px;">💰 ارز و طلا</h3>
+
+    <div class="scroll">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>قیمت</th>
+              <th>تغییر</th>
+              <th>%</th>
+              <th>واحد</th>
+            </tr>
+          </thead>
+          <tbody id="goldcurrency-body">
+            <tr><td colspan="5"><div class="skeleton" style="width:90%;margin:4px auto;"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton" style="width:75%;margin:4px auto;"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton" style="width:85%;margin:4px auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footerLine">
+      <div id="goldcurrency-upd">آخرین بروزرسانی: —</div>
+    </div>
+  </div>
+
+  <!-- ====== Crypto ====== -->
+  <div class="tableCard fade-in" id="crypto-card">
+    <h3 style="margin:0 0 14px; font-size:16px;">🪙 رمز ارز</h3>
+
+    <div class="scroll">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>قیمت</th>
+              <th>تغییر</th>
+              <th>%</th>
+              <th>واحد</th>
+            </tr>
+          </thead>
+          <tbody id="crypto-body">
+            <tr><td colspan="5"><div class="skeleton" style="width:90%;margin:4px auto;"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton" style="width:75%;margin:4px auto;"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton" style="width:85%;margin:4px auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footerLine">
+      <div id="crypto-upd">آخرین بروزرسانی: —</div>
+    </div>
+  </div>
+
+  <!-- ====== Selected indices ====== -->
+  <div class="tableCard fade-in">
+    <h3 style="margin:0 0 14px; font-size:16px;">🧾 جدول شاخص‌های منتخب</h3>
+
+    <div class="scroll">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th>مقدار</th>
+              <th>تغییر</th>
+              <th>%</th>
+              <th>کمترین</th>
+              <th>بیشترین</th>
+            </tr>
+          </thead>
+          <tbody id="selected-body">
+            <tr><td colspan="6"><div class="skeleton" style="width:90%;margin:4px auto;"></div></td></tr>
+            <tr><td colspan="6"><div class="skeleton" style="width:80%;margin:4px auto;"></div></td></tr>
+            <tr><td colspan="6"><div class="skeleton" style="width:85%;margin:4px auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footerLine">
+      <div id="idx3-upd">آخرین بروزرسانی: —</div>
+    </div>
+  </div>
+
+</div>
+
 <script>
 (function () {
-  const TTL = 15 * 60 * 1000; // 15 min front cache
+  const TTL = 15 * 60 * 1000;
 
   function formatFaNumber(x) {
     const n = Number(x);
@@ -447,13 +582,13 @@
 
   function faTime(timeStr) {
     if (!timeStr || typeof timeStr !== "string") return "—";
-    return timeStr.replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+    return timeStr.replace(/\d/g, d => "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9"[d]);
   }
 
   function formatHemt(x) {
     const n = Number(x);
     if (!Number.isFinite(n)) return (x ?? "—").toString();
-    const v = n / 10000000000000; // 10^13
+    const v = n / 10000000000000;
     return `${v.toLocaleString("fa-IR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} همت`;
   }
 
@@ -469,20 +604,18 @@
     return ((ch / idx) * 100).toFixed(2);
   }
 
-  // ---------- Digital clock (Tehran) ----------
+  // ---------- Digital clock ----------
   const elTime = document.getElementById("teh-time");
   const elDate = document.getElementById("teh-date");
   const elWeekday = document.getElementById("teh-weekday");
 
   function tickClock() {
     const d = new Date();
-
     const partsTime = new Intl.DateTimeFormat("fa-IR", {
       timeZone: "Asia/Tehran",
       hour: "2-digit", minute: "2-digit", second: "2-digit",
       hour12: false
     }).formatToParts(d);
-
     const getPart = (type) => (partsTime.find(p => p.type === type)?.value || "");
     elTime.textContent = `${getPart("hour")}:${getPart("minute")}:${getPart("second")}`;
 
@@ -490,7 +623,6 @@
       timeZone: "Asia/Tehran",
       year: "numeric", month: "long", day: "2-digit"
     }).formatToParts(d);
-
     const year = partsDate.find(p => p.type === "year")?.value || "";
     const month = partsDate.find(p => p.type === "month")?.value || "";
     const day = partsDate.find(p => p.type === "day")?.value || "";
@@ -530,12 +662,11 @@
     return { data, cached: false };
   }
 
-  // ---------- Gold/Currency (NEW) ----------
+  // ---------- Gold/Currency ----------
   async function fetchGoldCurrency() {
     const cacheKey = "brs_gold_currency";
     const cached = getCache(cacheKey);
     if (cached) return { data: cached, cached: true };
-
     const res = await fetch(`/api/market/gold-currency/`);
     if (!res.ok) throw new Error("gold-currency fetch failed");
     const data = await res.json();
@@ -544,78 +675,44 @@
   }
 
   const GOLD_SYMBOLS = new Set([
-    "IR_GOLD_18K",
-    "IR_GOLD_24K",
-    "IR_GOLD_MELTED",
-    "XAUUSD",
-    "IR_COIN_1G",
-    "IR_COIN_QUARTER",
-    "IR_COIN_HALF",
-    "IR_COIN_EMAMI",
-    "IR_COIN_BAHAR",
+    "IR_GOLD_18K","IR_GOLD_24K","IR_GOLD_MELTED","XAUUSD",
+    "IR_COIN_1G","IR_COIN_QUARTER","IR_COIN_HALF","IR_COIN_EMAMI","IR_COIN_BAHAR",
   ]);
-
   const CUR_SYMBOLS = new Set([
-    "USD",
-    "EUR",
-    "AED",
-    "GBP",
-    "JPY",
-    "AUD",
-    "CAD",
-    "TRY",
-    "SAR",
-    "CHF",
+    "USD","EUR","AED","GBP","JPY","AUD","CAD","TRY","SAR","CHF",
   ]);
 
   function renderGoldCurrency(payload) {
     const tbody = document.getElementById("goldcurrency-body");
     if (!tbody) return;
-
     if (!payload || payload.error) {
       tbody.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت داده‌ها</td></tr>`;
       return;
     }
-
     const gold = Array.isArray(payload.gold) ? payload.gold : [];
     const currency = Array.isArray(payload.currency) ? payload.currency : [];
-
     const pickedGold = gold.filter(x => GOLD_SYMBOLS.has(x.symbol));
     const pickedCur = currency.filter(x => CUR_SYMBOLS.has(x.symbol));
-
     const list = [...pickedGold, ...pickedCur];
-
     if (!list.length) {
-      tbody.innerHTML = `<tr><td colspan="5" class="muted">داده‌ای برای نمایش موجود نیست.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">داده‌ای موجود نیست.</td></tr>`;
       return;
     }
-
     tbody.innerHTML = list.map(row => {
       const name = row.name ?? "—";
       const price = row.price ?? "—";
       const chgV = (row.change_value ?? row.value_change ?? "—");
       const chgP = (row.change_percent ?? row.value_percent ?? "—");
       const unit = row.unit ?? "—";
-
       const cls = chgClass(chgV);
-      return `
-        <tr>
-          <td>${name}</td>
-          <td>${formatFaNumber(price)}</td>
-          <td class="${cls}">${formatFaNumber(chgV)}</td>
-          <td class="${cls}">${formatFaPercent(chgP)}</td>
-          <td>${unit}</td>
-        </tr>
-      `;
+      return `<tr><td>${name}</td><td>${formatFaNumber(price)}</td><td class="${cls}">${formatFaNumber(chgV)}</td><td class="${cls}">${formatFaPercent(chgP)}</td><td>${unit}</td></tr>`;
     }).join("");
-
     const usd = pickedCur.find(x => x.symbol === "USD");
     const t = usd?.time || list[0]?.time || "—";
-    document.getElementById("goldcurrency-upd").textContent =
-      `آخرین بروزرسانی: ${faTime(t)}`;
+    document.getElementById("goldcurrency-upd").textContent = `آخرین بروزرسانی: ${faTime(t)}`;
   }
 
-  // ---------- Crypto (NEW) ----------
+  // ---------- Crypto ----------
   const CRYPTO_SYMBOLS = new Set([
     "BTC","ETH","XRP","USDT","BNB","SOL","USDC","ADA","DOGE","TRX","LINK","XLM","AVAX","SHIB","LTC"
   ]);
@@ -623,127 +720,94 @@
   function renderCrypto(payload) {
     const tbody = document.getElementById("crypto-body");
     if (!tbody) return;
-
     if (!payload || payload.error) {
       tbody.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت داده‌ها</td></tr>`;
       return;
     }
-
     const crypto = Array.isArray(payload.cryptocurrency) ? payload.cryptocurrency : [];
     const list = crypto.filter(x => CRYPTO_SYMBOLS.has(x.symbol));
-
     if (!list.length) {
-      tbody.innerHTML = `<tr><td colspan="5" class="muted">داده‌ای برای نمایش موجود نیست.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">داده‌ای موجود نیست.</td></tr>`;
       return;
     }
-
     tbody.innerHTML = list.map(row => {
       const name = row.name ?? "—";
       const price = row.price ?? "—";
       const chgV = (row.change_value ?? row.value_change ?? "—");
       const chgP = (row.change_percent ?? row.value_percent ?? "—");
       const unit = row.unit ?? "—";
-
       const cls = chgClass(chgP);
-      return `
-        <tr>
-          <td>${name}</td>
-          <td>${formatFaNumber(price)}</td>
-          <td class="${cls}">${formatFaNumber(chgV)}</td>
-          <td class="${cls}">${formatFaPercent(chgP)}</td>
-          <td>${unit}</td>
-        </tr>
-      `;
+      return `<tr><td>${name}</td><td>${formatFaNumber(price)}</td><td class="${cls}">${formatFaNumber(chgV)}</td><td class="${cls}">${formatFaPercent(chgP)}</td><td>${unit}</td></tr>`;
     }).join("");
-
     const btc = list.find(x => x.symbol === "BTC");
     const t = btc?.time || list[0]?.time || "—";
-    document.getElementById("crypto-upd").textContent =
-      `آخرین بروزرسانی: ${faTime(t)}`;
+    document.getElementById("crypto-upd").textContent = `آخرین بروزرسانی: ${faTime(t)}`;
   }
 
-  // ---------- Render بورس (type=1) ----------
+  // ---------- Render بورس ----------
   function renderBourse(obj) {
     const box = document.getElementById("index-1");
     if (!box) return;
     const items = box.querySelectorAll(".item");
-
     if (!obj || obj.error) {
       items[0].querySelector(".v").textContent = "خطا در دریافت";
       return;
     }
-
-    items[0].querySelector(".v").textContent = obj.state || "—";
-    items[1].querySelector(".v").textContent = formatFaNumber(obj.index);
-
+    items[0].querySelector(".v").innerHTML = obj.state || "—";
+    items[1].querySelector(".v").innerHTML = formatFaNumber(obj.index);
     const chgEl = items[2].querySelector(".v");
     chgEl.className = `v ${chgClass(obj.index_change)}`;
     const p = pct(obj.index_change, obj.index);
     chgEl.textContent = p === null
      ? formatFaNumber(obj.index_change)
      : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
-
-    items[3].querySelector(".v").textContent = formatHemt(obj.mv);
-
-    items[4].querySelector(".v").textContent = formatFaNumber(obj.tno);
-    items[5].querySelector(".v").textContent = formatFaNumber(obj.tvol);
-    items[6].querySelector(".v").textContent = formatHemt(obj.tval);
-
-    document.getElementById("idx1-upd").textContent =
-      `آخرین بروزرسانی: ${faTime(obj.time)}`;
+    items[3].querySelector(".v").innerHTML = formatHemt(obj.mv);
+    items[4].querySelector(".v").innerHTML = formatFaNumber(obj.tno);
+    items[5].querySelector(".v").innerHTML = formatFaNumber(obj.tvol);
+    items[6].querySelector(".v").innerHTML = formatHemt(obj.tval);
+    document.getElementById("idx1-upd").textContent = `آخرین بروزرسانی: ${faTime(obj.time)}`;
   }
 
-  // ---------- Render فرابورس (type=2) ----------
+  // ---------- Render فرابورس ----------
   function renderFarabourse(obj) {
     const box = document.getElementById("index-2");
     if (!box) return;
     const items = box.querySelectorAll(".item");
-
     if (!obj || obj.error) {
       items[0].querySelector(".v").textContent = "خطا در دریافت";
       return;
     }
-
-    items[0].querySelector(".v").textContent = obj.state || "—";
-    items[1].querySelector(".v").textContent = formatFaNumber(obj.index);
-
+    items[0].querySelector(".v").innerHTML = obj.state || "—";
+    items[1].querySelector(".v").innerHTML = formatFaNumber(obj.index);
     const chgEl = items[2].querySelector(".v");
     chgEl.className = `v ${chgClass(obj.index_change)}`;
     const p = pct(obj.index_change, obj.index);
     chgEl.textContent = p === null
      ? formatFaNumber(obj.index_change)
      : `${formatFaNumber(obj.index_change)} (${formatFaPercent(p)})`;
-
-    items[3].querySelector(".v").textContent = formatHemt(obj.mv_base);
-    items[4].querySelector(".v").textContent = formatHemt(obj.mv_main);
-    items[5].querySelector(".v").textContent = formatFaNumber(obj.tno);
-    items[6].querySelector(".v").textContent = formatFaNumber(obj.tvol);
-    items[7].querySelector(".v").textContent = formatHemt(obj.tval);
-
-    document.getElementById("idx2-upd").textContent =
-      `آخرین بروزرسانی: ${faTime(obj.time)}`;
+    items[3].querySelector(".v").innerHTML = formatHemt(obj.mv_base);
+    items[4].querySelector(".v").innerHTML = formatHemt(obj.mv_main);
+    items[5].querySelector(".v").innerHTML = formatFaNumber(obj.tno);
+    items[6].querySelector(".v").innerHTML = formatFaNumber(obj.tvol);
+    items[7].querySelector(".v").innerHTML = formatHemt(obj.tval);
+    document.getElementById("idx2-upd").textContent = `آخرین بروزرسانی: ${faTime(obj.time)}`;
   }
 
-  // ---------- Render type=3 table (بدون ستون زمان) ----------
+  // ---------- Render type=3 table ----------
   function renderSelected(data) {
     const tbody = document.getElementById("selected-body");
     if (!tbody) return;
-
     if (!data || data.error) {
       tbody.innerHTML = `<tr><td colspan="6" class="muted">خطا در دریافت داده‌ها</td></tr>`;
       return;
     }
-
     const list = Array.isArray(data) ? data :
                  Array.isArray(data?.data) ? data.data :
-                 Array.isArray(data?.items) ? data.items :
-                 null;
-
+                 Array.isArray(data?.items) ? data.items : null;
     if (!list || !list.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="muted">داده‌ای برای نمایش موجود نیست.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="muted">داده‌ای موجود نیست.</td></tr>`;
       return;
     }
-
     tbody.innerHTML = list.map(row => {
       const name = row.name ?? "—";
       const index = row.index ?? "—";
@@ -752,29 +816,16 @@
       const min = row.min ?? "—";
       const max = row.max ?? "—";
       const cls = chgClass(chg);
-
-      return `
-        <tr>
-          <td>${name}</td>
-          <td>${formatFaNumber(index)}</td>
-          <td class="${cls}">${formatFaNumber(chg)}</td>
-          <td class="${cls}">${formatFaPercent(pctv)}</td>
-          <td>${formatFaNumber(min)}</td>
-          <td>${formatFaNumber(max)}</td>
-        </tr>
-      `;
+      return `<tr><td>${name}</td><td>${formatFaNumber(index)}</td><td class="${cls}">${formatFaNumber(chg)}</td><td class="${cls}">${formatFaPercent(pctv)}</td><td>${formatFaNumber(min)}</td><td>${formatFaNumber(max)}</td></tr>`;
     }).join("");
-
     const t = list[0]?.time || "—";
-    document.getElementById("idx3-upd").textContent =
-      `آخرین بروزرسانی: ${faTime(t)}`;
+    document.getElementById("idx3-upd").textContent = `آخرین بروزرسانی: ${faTime(t)}`;
   }
 
   async function loadAll() {
     try { renderBourse((await fetchIndex(1)).data); } catch {}
     try { renderFarabourse((await fetchIndex(2)).data); } catch {}
     try { renderSelected((await fetchIndex(3)).data); } catch {}
-
     try {
       const p = (await fetchGoldCurrency()).data;
       renderGoldCurrency(p);
@@ -782,8 +833,8 @@
     } catch {
       const gb = document.getElementById("goldcurrency-body");
       const cb = document.getElementById("crypto-body");
-      if (gb) gb.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت (endpoint: /api/market/gold-currency/)</td></tr>`;
-      if (cb) cb.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت (endpoint: /api/market/gold-currency/)</td></tr>`;
+      if (gb) gb.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت</td></tr>`;
+      if (cb) cb.innerHTML = `<tr><td colspan="5" class="muted">خطا در دریافت</td></tr>`;
     }
   }
 

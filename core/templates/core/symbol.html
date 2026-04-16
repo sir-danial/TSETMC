@@ -27,72 +27,165 @@
     }
 
     :root{
-      --bg:#0b1220;
-      --card:#0a0f1a;
-      --card2:#0b1423;
+      --bg:#0b1120;
+      --card:#0d1526;
+      --card2:#0f172a;
       --border:#1e293b;
-      --text:#e5e7eb;
-      --muted:#94a3b8;
-      --blue:#2563eb;
-      --green:#22c55e;
+      --text:#e2e8f0;
+      --muted:#64748b;
+      --blue:#3b82f6;
+      --blue-glow: rgba(59,130,246,.25);
+      --green:#10b981;
       --red:#ef4444;
-      --yellow:#eab308;
+      --yellow:#f59e0b;
+      --glass: rgba(15,23,42,.72);
+      --glass-border: rgba(148,163,184,.12);
     }
 
-    *{ box-sizing:border-box; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+
     body{
-      margin:0;
-      padding:28px;
       font-family:"Vazir", Tahoma, sans-serif;
-      background: radial-gradient(1200px 600px at 60% -10%, rgba(37,99,235,.20), transparent 60%),
-                  radial-gradient(900px 500px at 10% 0%, rgba(34,197,94,.12), transparent 55%),
-                  var(--bg);
+      background: var(--bg);
       color:var(--text);
+      min-height:100vh;
       direction: rtl;
+      overflow-x: hidden;
     }
 
-    .container{ max-width:1200px; margin:0 auto; }
+    body::before{
+      content:'';
+      position:fixed;
+      inset:0;
+      background:
+        radial-gradient(ellipse 900px 500px at 70% -5%, rgba(59,130,246,.15), transparent 70%),
+        radial-gradient(ellipse 600px 400px at 15% 5%, rgba(16,185,129,.10), transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
 
-    .topbar{
+    /* ---------- Custom scrollbar ---------- */
+    ::-webkit-scrollbar{ width:6px; height:6px; }
+    ::-webkit-scrollbar-track{ background:transparent; }
+    ::-webkit-scrollbar-thumb{ background:rgba(100,116,139,.35); border-radius:99px; }
+    ::-webkit-scrollbar-thumb:hover{ background:rgba(100,116,139,.55); }
+    *{ scrollbar-width:thin; scrollbar-color: rgba(100,116,139,.35) transparent; }
+
+    /* ---------- Navbar ---------- */
+    .navbar{
+      position:sticky;
+      top:0;
+      z-index:100;
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      background: var(--glass);
+      border-bottom:1px solid var(--glass-border);
+      padding:0 28px;
+    }
+    .navbar-inner{
+      max-width:1240px;
+      margin:0 auto;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom: 14px;
+      height:56px;
     }
-
-    a.back{
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-      color:#93c5fd;
-      text-decoration:none;
-      font-size:13px;
-    }
-    a.back:hover{ text-decoration:underline; }
-
-    .title{
-      font-size:18px;
-      font-weight:700;
-      margin:0;
+    .nav-brand{
       display:flex;
       align-items:center;
-      gap:8px;
+      gap:10px;
+      font-size:17px;
+      font-weight:700;
+      color:#f1f5f9;
+      text-decoration:none;
+    }
+    .nav-brand .logo{
+      width:32px; height:32px;
+      background: linear-gradient(135deg, var(--blue), #8b5cf6);
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:16px;
+      color:#fff;
+    }
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .nav-links a{
+      color:var(--muted);
+      text-decoration:none;
+      font-size:13px;
+      padding:8px 14px;
+      border-radius:10px;
+      transition: all .2s;
+    }
+    .nav-links a:hover,
+    .nav-links a.active{
+      color:#e2e8f0;
+      background:rgba(255,255,255,.06);
     }
 
+    /* ---------- Container ---------- */
+    .container{
+      max-width:1240px;
+      margin:0 auto;
+      padding:24px 28px 40px;
+      position:relative;
+      z-index:1;
+    }
+
+    /* ---------- Animations ---------- */
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(18px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+    .fade-in{
+      animation: fadeUp .5s ease both;
+    }
+    .fade-in:nth-child(1){ animation-delay:.05s; }
+    .fade-in:nth-child(2){ animation-delay:.12s; }
+
+    @keyframes shimmer{
+      0%{ background-position: -200% 0; }
+      100%{ background-position: 200% 0; }
+    }
+    .skeleton{
+      background: linear-gradient(90deg, rgba(100,116,139,.08) 25%, rgba(100,116,139,.18) 50%, rgba(100,116,139,.08) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s ease-in-out infinite;
+      border-radius:6px;
+      height:18px;
+      width:70%;
+    }
+
+    /* ---------- Warning ---------- */
     .analysis-warning{
-      margin: 10px 0 18px;
-      padding: 12px 14px;
+      margin: 0 0 20px;
+      padding: 14px 16px;
       border-radius: 12px;
-      background: rgba(234,179,8,.12);
-      border: 1px solid rgba(234,179,8,.35);
-      color: #fde68a;
+      background: rgba(245,158,11,.08);
+      border: 1px solid rgba(245,158,11,.2);
+      color: #fcd34d;
       font-size: 13px;
       line-height: 1.85;
-      box-shadow: 0 0 25px rgba(0,0,0,.25);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .analysis-warning::before{
+      content:'';
+      flex-shrink:0;
+      width:4px;
+      height:100%;
+      min-height:20px;
+      border-radius:99px;
+      background: var(--yellow);
     }
 
+    /* ---------- Grid ---------- */
     .grid{
       display:grid;
       grid-template-columns: 1.2fr .8fr;
@@ -103,80 +196,90 @@
       .grid{ grid-template-columns:1fr; }
     }
 
+    /* ---------- Card ---------- */
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card);
-      border:1px solid rgba(30,41,59,.75);
-      border-radius:18px;
-      padding:18px;
-      box-shadow: 0 0 35px rgba(0,0,0,.35);
+      background: linear-gradient(180deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,0) 100%), var(--card);
+      border:1px solid var(--glass-border);
+      border-radius:16px;
+      padding:20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.25);
     }
 
     .muted{ color:var(--muted); font-size:13px; }
 
+    /* ---------- Form ---------- */
     .formRow{
       display:flex;
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
-      margin-top: 10px;
+      margin-top: 12px;
     }
 
     input{
       flex:1;
       min-width: 200px;
-      padding: 12px 12px;
+      padding: 12px 14px;
       border-radius: 12px;
-      border: 1px solid rgba(30,41,59,.75);
-      background: rgba(2,6,23,.35);
+      border: 1px solid var(--glass-border);
+      background: rgba(2,6,23,.4);
       color: var(--text);
       outline: none;
       font-size: 14px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus{
+      border-color: rgba(59,130,246,.4);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.1);
     }
 
     .btn{
-      padding: 12px 14px;
+      padding: 12px 18px;
       border-radius: 12px;
-      border:1px solid rgba(37,99,235,.45);
-      background: rgba(37,99,235,.15);
-      color:#dbeafe;
+      border:1px solid rgba(59,130,246,.3);
+      background: linear-gradient(135deg, rgba(59,130,246,.15), rgba(139,92,246,.10));
+      color:#bfdbfe;
       cursor:pointer;
       font-weight:700;
       font-size:14px;
-      transition:.15s ease;
+      transition: all .2s ease;
       min-width: 120px;
     }
-    .btn:hover{ background: rgba(37,99,235,.25); }
-    input,
-    button,
-    .btn {
-      font-family: "Vazir", Tahoma, sans-serif;
+    .btn:hover{
+      background: linear-gradient(135deg, rgba(59,130,246,.25), rgba(139,92,246,.18));
+      border-color: rgba(59,130,246,.5);
+      box-shadow: 0 0 20px rgba(59,130,246,.15);
+    }
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
     }
 
-    input::placeholder {
-      font-family: "Vazir", Tahoma, sans-serif;
-    }
+    input, button, .btn{ font-family: "Vazir", Tahoma, sans-serif; }
+    input::placeholder{ font-family: "Vazir", Tahoma, sans-serif; color:var(--muted); }
 
+    /* ---------- KV items ---------- */
     .kv{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:10px 14px;
+      gap:8px;
       margin-top: 14px;
     }
     .item{
       padding:10px 12px;
-      border:1px solid rgba(30,41,59,.75);
-      border-radius:14px;
-      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+      border:1px solid var(--glass-border);
+      border-radius:12px;
+      background: rgba(255,255,255,.02);
+      transition: background .2s;
     }
-    .k{ color:var(--muted); font-size:12px; }
+    .item:hover{ background: rgba(255,255,255,.04); }
+    .k{ color:var(--muted); font-size:11px; letter-spacing:.3px; }
     .v{ margin-top:4px; font-size:15px; font-weight:700; }
 
-    /* ✅ فقط برجسته‌تر کردن کاشی نماد (در live-kv) */
     #live-kv .item:first-child .v{
-      font-size:18px;
+      font-size:17px;
       font-weight:900;
       color:#f8fafc;
-      letter-spacing:.2px;
     }
 
     .chg.pos{ color: var(--green); }
@@ -184,73 +287,158 @@
     .chg.neu{ color: var(--yellow); }
 
     .hr{
-      margin:16px 0;
+      margin:18px 0;
       border:0;
-      border-top:1px solid rgba(30,41,59,.75);
+      border-top:1px solid var(--glass-border);
     }
 
-    /* ---- tables ---- */
-    .tableCard{
-      margin-top:18px;
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card2);
-      border:1px solid rgba(30,41,59,.75);
-      border-radius:18px;
-      padding:18px;
-      box-shadow: 0 0 35px rgba(0,0,0,.35);
+    /* ---------- Recommendation badge ---------- */
+    .rec-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 22px;
+      border-radius:12px;
+      font-size:16px;
+      font-weight:700;
+      letter-spacing:.5px;
     }
+    .rec-badge.buy{
+      background: rgba(16,185,129,.12);
+      border:1px solid rgba(16,185,129,.3);
+      color:#34d399;
+    }
+    .rec-badge.sell{
+      background: rgba(239,68,68,.12);
+      border:1px solid rgba(239,68,68,.3);
+      color:#f87171;
+    }
+    .rec-badge.neutral{
+      background: rgba(245,158,11,.12);
+      border:1px solid rgba(245,158,11,.3);
+      color:#fbbf24;
+    }
+
+    /* ---------- Gauge (SVG circle) ---------- */
+    .gauge-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:6px;
+    }
+    .gauge-svg{
+      width:90px;
+      height:90px;
+      transform: rotate(-90deg);
+    }
+    .gauge-bg{
+      fill:none;
+      stroke:rgba(100,116,139,.15);
+      stroke-width:8;
+    }
+    .gauge-fill{
+      fill:none;
+      stroke-width:8;
+      stroke-linecap:round;
+      transition: stroke-dashoffset .8s ease;
+    }
+    .gauge-label{
+      font-size:13px;
+      color:var(--muted);
+      text-align:center;
+    }
+    .gauge-value{
+      font-size:18px;
+      font-weight:700;
+      text-align:center;
+    }
+
+    /* ---------- Progress bar ---------- */
+    .progress-wrap{
+      margin-top:6px;
+    }
+    .progress-bar{
+      height:8px;
+      border-radius:99px;
+      background:rgba(100,116,139,.15);
+      overflow:hidden;
+      position:relative;
+    }
+    .progress-fill{
+      height:100%;
+      border-radius:99px;
+      transition: width .8s ease;
+    }
+    .progress-labels{
+      display:flex;
+      justify-content:space-between;
+      font-size:11px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+
+    /* ---------- Tables ---------- */
+    .tableCard{
+      margin-top:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)) , var(--card2);
+      border:1px solid var(--glass-border);
+      border-radius:16px;
+      padding:18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.25);
+      transition: transform .25s ease;
+    }
+    .tableCard:hover{ transform: translateY(-2px); }
 
     .tableTitle{
       margin:0 0 12px;
-      font-size:16px;
+      font-size:15px;
       font-weight:700;
       display:flex;
       align-items:center;
       gap:8px;
+      color:#f1f5f9;
     }
 
     .scroll{
-      max-height: 260px;
+      max-height: 280px;
       overflow:auto;
-      border-radius:14px;
-      border:1px solid rgba(30,41,59,.75);
-      background: rgba(2,6,23,.25);
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background: rgba(2,6,23,.3);
     }
-
-    /* ✅ wrapper to keep sticky header reliable */
-    .tableWrap{
-      min-width: 100%;
-    }
+    .tableWrap{ min-width: 100%; }
 
     table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      border-radius:14px;
+      border-radius:12px;
     }
-
     thead th{
-      background: rgba(2,6,23,.92);
-      color:#e5e7eb;
+      background: rgba(15,23,42,.95);
+      backdrop-filter: blur(8px);
+      color:#94a3b8;
       font-weight:700;
-      font-size:13px;
-      padding:10px 12px;
-      border-bottom:1px solid rgba(30,41,59,.75);
+      font-size:12px;
+      padding:11px 14px;
+      border-bottom:1px solid var(--glass-border);
       white-space:nowrap;
-
       position: sticky;
       top: 0;
       z-index: 10;
-      backdrop-filter: blur(6px);
+      text-transform:uppercase;
+      letter-spacing:.5px;
     }
-
     tbody td{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(30,41,59,.55);
-      color: rgba(229,231,235,.92);
+      padding:10px 14px;
+      border-bottom:1px solid rgba(30,41,59,.4);
+      color: rgba(226,232,240,.9);
       font-size:13px;
       white-space:nowrap;
+      transition: background .15s;
     }
-    tbody tr:hover td{ background: rgba(37,99,235,.06); }
+    tbody tr:hover td{ background: rgba(59,130,246,.06); }
     tbody tr:last-child td{ border-bottom:none; }
 
     .footerLine{
@@ -260,129 +448,155 @@
       gap:12px;
       flex-wrap:wrap;
       color:var(--muted);
-      font-size:12px;
+      font-size:11px;
     }
 
-    /* recommendation */
-    .buy { color: #22c55e; }
-    .sell { color: #ef4444; }
-    .neutral { color: #eab308; }
+    /* ---------- Reasons list ---------- */
+    .reasons-list{
+      padding-right:18px;
+      line-height:2;
+      margin:8px 0 0;
+    }
+    .reasons-list li{
+      padding:4px 0;
+      border-bottom:1px solid rgba(30,41,59,.3);
+    }
+    .reasons-list li:last-child{ border-bottom:none; }
+
+    /* ---------- Analysis grid ---------- */
+    .analysis-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+      margin-top:16px;
+    }
+    .analysis-grid .gauge-card{
+      grid-column: span 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      border:1px solid var(--glass-border);
+      border-radius:14px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .buy { color: #34d399; }
+    .sell { color: #f87171; }
+    .neutral { color: #fbbf24; }
+
+    @media (max-width:600px){
+      .analysis-grid{ grid-template-columns:1fr; }
+      .container{ padding:16px 14px 30px; }
+    }
   </style>
 </head>
 
 <body>
-  <div class="container">
 
-    <div class="topbar">
-      <a class="back" href="/">← برگشت به داشبورد</a>
-      <h1 class="title">📊 تحلیل نماد بورس تهران</h1>
-    </div>
-
-    <div class="analysis-warning">
-      ⚠️ تحلیل ارائه‌شده توسط ماشین بوده و نباید به‌عنوان معیار اصلی تصمیم‌گیری در معاملات در نظر گرفته شود.
-    </div>
-
-    <div class="grid">
-
-      <!-- LEFT: Analysis -->
-      <div class="card">
-        <div class="muted">نماد را وارد کنید و تحلیل را دریافت کنید.</div>
-
-        <form id="analyze-form" class="formRow" autocomplete="off">
-          <input id="symbol-input" type="text" name="symbol" placeholder="مثلاً: فملی" required />
-          <button id="analyze-btn" class="btn" type="submit">تحلیل کن</button>
-        </form>
-
-        <!-- Live quick info -->
-        <div class="kv" id="live-kv" style="display:none;">
-          <div class="item">
-            <div class="k">نماد</div>
-            <div class="v" id="live-l18">—</div>
-          </div>
-          <div class="item">
-            <div class="k">نام</div>
-            <div class="v" id="live-l30">—</div>
-          </div>
-          <div class="item">
-            <div class="k">گروه صنعت</div>
-            <div class="v" id="live-cs">—</div>
-          </div>
-
-          <!-- ✅ (اصلاح 1) حذف کاشی قیمت آخر تکراری از live-kv -->
-          <!-- <div class="item">
-            <div class="k">قیمت آخر (pl)</div>
-            <div class="v" id="live-pl">—</div>
-          </div> -->
-        </div>
-
-        <hr class="hr" />
-
-        <div id="result" class="muted">برای شروع، نماد را وارد کنید.</div>
-      </div>
-
-      <!-- RIGHT: Live mini cards (tables) -->
-      <div>
-
-        <div class="tableCard">
-          <h3 class="tableTitle">💰 داده قیمتی</h3>
-          <div class="scroll">
-            <div class="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>عنوان</th>
-                    <th>مقدار</th>
-                  </tr>
-                </thead>
-                <tbody id="price-body">
-                  <tr><td colspan="2" class="muted">در حال دریافت...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="tableCard">
-          <h3 class="tableTitle">🧾 داده معاملاتی</h3>
-          <div class="scroll">
-            <div class="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>عنوان</th>
-                    <th>مقدار</th>
-                  </tr>
-                </thead>
-                <tbody id="trade-body">
-                  <tr><td colspan="2" class="muted">در حال دریافت...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="tableCard">
-          <h3 class="tableTitle">👥 حقیقی و حقوقی</h3>
-          <div class="scroll">
-            <div class="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>عنوان</th>
-                    <th>مقدار</th>
-                  </tr>
-                </thead>
-                <tbody id="reallegal-body">
-                  <tr><td colspan="2" class="muted">در حال دریافت...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div>
+<!-- ====== Navbar ====== -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="nav-brand" href="/">
+      <span class="logo">B</span>
+      داشبورد بازار
+    </a>
+    <div class="nav-links">
+      <a href="/">داشبورد</a>
+      <a href="/symbol/" class="active">تحلیل نماد</a>
     </div>
   </div>
+</nav>
+
+<div class="container">
+
+  <div class="analysis-warning">
+    تحلیل ارائه‌شده توسط ماشین بوده و نباید به‌عنوان معیار اصلی تصمیم‌گیری در معاملات در نظر گرفته شود.
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT: Analysis -->
+    <div class="card fade-in">
+      <div class="muted">نماد را وارد کنید و تحلیل را دریافت کنید.</div>
+
+      <form id="analyze-form" class="formRow" autocomplete="off">
+        <input id="symbol-input" type="text" name="symbol" placeholder="مثلاً: فملی" required />
+        <button id="analyze-btn" class="btn" type="submit">تحلیل کن</button>
+      </form>
+
+      <!-- Live quick info -->
+      <div class="kv" id="live-kv" style="display:none;">
+        <div class="item">
+          <div class="k">نماد</div>
+          <div class="v" id="live-l18">—</div>
+        </div>
+        <div class="item">
+          <div class="k">نام</div>
+          <div class="v" id="live-l30">—</div>
+        </div>
+        <div class="item">
+          <div class="k">گروه صنعت</div>
+          <div class="v" id="live-cs">—</div>
+        </div>
+      </div>
+
+      <hr class="hr" />
+
+      <div id="result" class="muted">برای شروع، نماد را وارد کنید.</div>
+    </div>
+
+    <!-- RIGHT: Live mini cards -->
+    <div class="fade-in">
+
+      <div class="tableCard">
+        <h3 class="tableTitle">💰 داده قیمتی</h3>
+        <div class="scroll">
+          <div class="tableWrap">
+            <table>
+              <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+              <tbody id="price-body">
+                <tr><td colspan="2"><div class="skeleton" style="width:85%;margin:4px 0;"></div></td></tr>
+                <tr><td colspan="2"><div class="skeleton" style="width:70%;margin:4px 0;"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tableCard">
+        <h3 class="tableTitle">🧾 داده معاملاتی</h3>
+        <div class="scroll">
+          <div class="tableWrap">
+            <table>
+              <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+              <tbody id="trade-body">
+                <tr><td colspan="2"><div class="skeleton" style="width:85%;margin:4px 0;"></div></td></tr>
+                <tr><td colspan="2"><div class="skeleton" style="width:70%;margin:4px 0;"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tableCard">
+        <h3 class="tableTitle">👥 حقیقی و حقوقی</h3>
+        <div class="scroll">
+          <div class="tableWrap">
+            <table>
+              <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+              <tbody id="reallegal-body">
+                <tr><td colspan="2"><div class="skeleton" style="width:85%;margin:4px 0;"></div></td></tr>
+                <tr><td colspan="2"><div class="skeleton" style="width:70%;margin:4px 0;"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -395,13 +609,11 @@
   const elL18 = document.getElementById("live-l18");
   const elL30 = document.getElementById("live-l30");
   const elCS  = document.getElementById("live-cs");
-  const elPL  = document.getElementById("live-pl"); // باقی می‌ماند (تغییری در منطق ندادیم)
 
   const priceBody = document.getElementById("price-body");
   const tradeBody = document.getElementById("trade-body");
   const rlBody    = document.getElementById("reallegal-body");
 
-  // ✅ نگهداری مقادیر لایو برای نمایش در کارت تحلیل
   let LIVE_PL = null;
   let LIVE_PLP = null;
 
@@ -423,12 +635,11 @@
   }
 
   function recFa(r) {
-    if (r === "buy") return { text: "خرید", cls: "buy" };
-    if (r === "sell") return { text: "فروش", cls: "sell" };
-    return { text: "نگهداری", cls: "neutral" };
+    if (r === "buy") return { text: "خرید", cls: "buy", icon: "▲" };
+    if (r === "sell") return { text: "فروش", cls: "sell", icon: "▼" };
+    return { text: "نگهداری", cls: "neutral", icon: "■" };
   }
 
-  // ✅ عدد فارسی + اعشار با "/"
   function nf(x) {
     const n = Number(x);
     if (!Number.isFinite(n)) return String(x ?? "—");
@@ -446,11 +657,47 @@
     return n > 0 ? "chg pos" : "chg neg";
   }
 
+  // ---------- SVG Gauge builder ----------
+  function buildGauge(value, max, color, label) {
+    const pct = Math.min(Math.max(value / max, 0), 1);
+    const r = 36;
+    const circumference = 2 * Math.PI * r;
+    const offset = circumference * (1 - pct);
+    return `
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" viewBox="0 0 90 90">
+          <circle class="gauge-bg" cx="45" cy="45" r="${r}"/>
+          <circle class="gauge-fill" cx="45" cy="45" r="${r}"
+            stroke="${color}"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="gauge-value" style="color:${color}; margin-top:-6px;">${nf(value)}</div>
+        <div class="gauge-label">${label}</div>
+      </div>
+    `;
+  }
+
+  // ---------- Progress bar builder ----------
+  function buildProgress(value, label, color) {
+    const pct = Math.min(Math.max(Math.abs(value), 0), 100);
+    return `
+      <div class="progress-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <span class="k">${label}</span>
+          <span style="font-weight:700;font-size:14px;color:${color}">${nf(value)}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pct}%;background:${color};"></div>
+        </div>
+      </div>
+    `;
+  }
+
   async function analyze(symbol) {
     const url = `/api/analyze/?symbol=${encodeURIComponent(symbol)}`;
     const res = await fetch(url, { method: "GET" });
     if (!res.ok) throw new Error("HTTP " + res.status);
-
     const data = await res.json();
     if (data && data.error) throw new Error(data.error);
     return data;
@@ -470,10 +717,6 @@
     elL18.textContent = safeText(d?.l18);
     elL30.textContent = safeText(d?.l30);
     elCS.textContent  = safeText(d?.cs);
-
-    // ✅ چون کاشی live-pl حذف شد، این یکی را دیگر در DOM ست نمی‌کنیم
-    // elPL && (elPL.textContent = nf(d?.pl));
-
     LIVE_PL = d?.pl ?? null;
     LIVE_PLP = d?.plp ?? null;
   }
@@ -483,40 +726,35 @@
       tbody.innerHTML = `<tr><td colspan="2" class="muted">داده‌ای موجود نیست.</td></tr>`;
       return;
     }
-    tbody.innerHTML = pairs.map(p => `
-      <tr>
-        <td>${p.k}</td>
-        <td>${p.v}</td>
-      </tr>
-    `).join("");
+    tbody.innerHTML = pairs.map(p => `<tr><td>${p.k}</td><td>${p.v}</td></tr>`).join("");
   }
 
   function renderLiveTables(d) {
     const pricePairs = [
-      { k: "کمترین قیمت روز (pmin)", v: nf(d?.pmin) },
-      { k: "بیشترین قیمت روز (pmax)", v: nf(d?.pmax) },
-      { k: "کمترین قیمت مجاز (tmin)", v: nf(d?.tmin) },
-      { k: "بیشترین قیمت مجاز (tmax)", v: nf(d?.tmax) },
-      { k: "دیروز (py)", v: nf(d?.py) },
-      { k: "اولین (pf)", v: nf(d?.pf) },
-      { k: "قیمت آخر (pl)", v: nf(d?.pl) },
-      { k: "تغییر قیمت آخر (plc)", v: nf(d?.plc) },
-      { k: "درصد تغییر آخر (plp)", v: nf(d?.plp) },
-      { k: "پایانی (pc)", v: nf(d?.pc) },
-      { k: "تغییر پایانی (pcc)", v: nf(d?.pcc) },
-      { k: "درصد تغییر پایانی (pcp)", v: nf(d?.pcp) },
+      { k: "کمترین قیمت روز", v: nf(d?.pmin) },
+      { k: "بیشترین قیمت روز", v: nf(d?.pmax) },
+      { k: "کمترین مجاز", v: nf(d?.tmin) },
+      { k: "بیشترین مجاز", v: nf(d?.tmax) },
+      { k: "دیروز", v: nf(d?.py) },
+      { k: "اولین", v: nf(d?.pf) },
+      { k: "قیمت آخر", v: nf(d?.pl) },
+      { k: "تغییر آخر", v: nf(d?.plc) },
+      { k: "درصد تغییر آخر", v: nf(d?.plp) },
+      { k: "پایانی", v: nf(d?.pc) },
+      { k: "تغییر پایانی", v: nf(d?.pcc) },
+      { k: "درصد تغییر پایانی", v: nf(d?.pcp) },
     ];
     renderPairs(priceBody, pricePairs);
 
     const tradePairs = [
-      { k: "تعداد معاملات (tno)", v: nf(d?.tno) },
-      { k: "حجم معاملات (tvol)", v: nf(d?.tvol) },
-      { k: "ارزش معاملات (tval)", v: nf(d?.tval) },
-      { k: "ارزش بازار (mv)", v: nf(d?.mv) },
-      { k: "حجم مبنا (bvol)", v: nf(d?.bvol) },
+      { k: "تعداد معاملات", v: nf(d?.tno) },
+      { k: "حجم معاملات", v: nf(d?.tvol) },
+      { k: "ارزش معاملات", v: nf(d?.tval) },
+      { k: "ارزش بازار", v: nf(d?.mv) },
+      { k: "حجم مبنا", v: nf(d?.bvol) },
       { k: "EPS", v: nf(d?.eps) },
       { k: "P/E", v: nf(d?.pe) },
-      { k: "آخرین زمان (time)", v: safeText(d?.time) },
+      { k: "آخرین زمان", v: safeText(d?.time) },
     ];
     renderPairs(tradeBody, tradePairs);
 
@@ -539,7 +777,14 @@
     btn.disabled = true;
     btn.textContent = "در حال دریافت...";
     result.className = "muted";
-    result.innerHTML = `در حال دریافت تحلیل برای <b>${symbol}</b> ...`;
+    result.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        <div class="skeleton" style="width:90%;"></div>
+        <div class="skeleton" style="width:75%;"></div>
+        <div class="skeleton" style="width:60%;"></div>
+        <div class="skeleton" style="width:85%;"></div>
+      </div>
+    `;
 
     try {
       const [analysis, live] = await Promise.allSettled([
@@ -565,56 +810,78 @@
       const reasons = Array.isArray(data.reasons) ? data.reasons : [];
 
       const reasonsHtml = reasons.length
-        ? `<ul style="padding-right:18px; line-height:1.9; margin: 8px 0 0;">
-              ${reasons.map(r => `<li>${r}</li>`).join("")}
-           </ul>`
+        ? `<ul class="reasons-list">${reasons.map(r => `<li>${r}</li>`).join("")}</ul>`
         : `<p class="muted" style="margin:8px 0 0;">دلیلی برای نمایش موجود نیست.</p>`;
 
       const plText = nf(LIVE_PL);
       const plpCls = chgClass(LIVE_PLP);
       const plpText = nf(LIVE_PLP) + "%";
 
+      // RSI color
+      const rsiVal = Number(data.rsi) || 0;
+      const rsiColor = rsiVal > 70 ? '#ef4444' : rsiVal < 30 ? '#10b981' : '#f59e0b';
+
+      // Score color
+      const scoreVal = Number(data.score) || 0;
+      const scoreColor = scoreVal >= 60 ? '#10b981' : scoreVal >= 40 ? '#f59e0b' : '#ef4444';
+
+      // Risk / Return
+      const riskVal = Number(data.risk_percent) || 0;
+      const retVal = Number(data.return_percent) || 0;
+
       result.className = "";
       result.innerHTML = `
-        <!-- ✅ (اصلاح 2) حذف عنوان وسط: "نماد: ..."  -->
-
-        <div class="kv" style="margin-top:12px;">
+        <div class="kv" style="margin-top:4px;">
           <div class="item">
-            <div class="k">آخرین معامله (pl)</div>
+            <div class="k">آخرین معامله</div>
             <div class="v">${plText}</div>
           </div>
-
           <div class="item">
-            <div class="k">درصد تغییر آخرین معامله (plp)</div>
+            <div class="k">درصد تغییر</div>
             <div class="v ${plpCls}">${plpText}</div>
           </div>
-
           <div class="item">
-            <div class="k">Trend</div>
+            <div class="k">روند</div>
             <div class="v">${trendFa(data.trend)}</div>
           </div>
-
           <div class="item">
-            <div class="k">RSI</div>
-            <div class="v">${nf(data.rsi)}</div>
+            <div class="k">حد ضرر</div>
+            <div class="v" style="color:#f87171;">${nf(data.stop_loss)}</div>
           </div>
+          <div class="item">
+            <div class="k">حد سود</div>
+            <div class="v" style="color:#34d399;">${nf(data.take_profit)}</div>
+          </div>
+        </div>
 
-          <div class="item"><div class="k">درصد ریسک</div><div class="v">${nf(data.risk_percent)}%</div></div>
-          <div class="item"><div class="k">حد ضرر</div><div class="v">${nf(data.stop_loss)}</div></div>
-          <div class="item"><div class="k">حد سود</div><div class="v">${nf(data.take_profit)}</div></div>
-          <div class="item"><div class="k">امتیاز (Score)</div><div class="v">${nf(data.score)}</div></div>
-          <div class="item"><div class="k">پیشنهاد</div><div class="v ${rec.cls}">${rec.text}</div></div>
+        <div class="analysis-grid">
+          <div class="gauge-card">
+            ${buildGauge(rsiVal, 100, rsiColor, 'RSI')}
+          </div>
+          <div class="gauge-card">
+            ${buildGauge(scoreVal, 100, scoreColor, 'امتیاز')}
+          </div>
+        </div>
+
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+          ${buildProgress(riskVal, 'ریسک', '#ef4444')}
+          ${buildProgress(retVal, 'بازده', '#10b981')}
+        </div>
+
+        <div style="margin-top:18px; text-align:center;">
+          <div class="k" style="margin-bottom:8px;">پیشنهاد</div>
+          <span class="rec-badge ${rec.cls}">${rec.icon} ${rec.text}</span>
         </div>
 
         <hr class="hr" />
 
-        <h4 style="margin:0 0 6px;">🧠 دلایل تحلیل:</h4>
+        <h4 style="margin:0 0 6px; font-size:14px; color:#f1f5f9;">دلایل تحلیل</h4>
         ${reasonsHtml}
       `;
     } catch (err) {
       result.className = "";
       result.innerHTML = `
-        <p style="color:#ef4444; margin:0;">❌ دریافت تحلیل ناموفق بود</p>
+        <p style="color:#ef4444; margin:0;">دریافت تحلیل ناموفق بود</p>
         <p class="muted" style="margin:8px 0 0;">${String(err?.message || err)}</p>
       `;
     } finally {
