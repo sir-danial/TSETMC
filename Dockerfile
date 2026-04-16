@@ -5,7 +5,9 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+# Use Iranian mirrors for apt and pip (Hamravesh has no direct access)
+RUN sed -i 's|deb.debian.org|mirror.arvancloud.ir|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     ca-certificates \
@@ -14,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -i https://mirror-pypi.runflare.com/simple
 
 COPY . .
 
