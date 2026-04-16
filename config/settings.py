@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
     # local apps
     "core",
+    "accounts",
 
     # cron
     "django_crontab",
@@ -77,7 +78,9 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
+            BASE_DIR / "templates",
             BASE_DIR / "core" / "templates",
+            BASE_DIR / "accounts" / "templates",
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -159,3 +162,11 @@ CACHES = {
 }
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+# --------------------------------------------------
+# Auth
+# --------------------------------------------------
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"

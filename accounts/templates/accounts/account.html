@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>حساب کاربری</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @font-face{font-family:"Vazir";src:url("/static/core/fonts/vazir/Vazir.woff2") format("woff2");font-weight:400;font-display:swap;}
+    @font-face{font-family:"Vazir";src:url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2");font-weight:700;font-display:swap;}
+    :root{--bg:#0b1120;--card:#0d1526;--text:#e2e8f0;--muted:#64748b;--blue:#3b82f6;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--glass:rgba(15,23,42,.72);--glass-border:rgba(148,163,184,.12);}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:"Vazir",Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 900px 500px at 70% -5%,rgba(59,130,246,.15),transparent 70%),radial-gradient(ellipse 600px 400px at 15% 5%,rgba(16,185,129,.10),transparent 60%);pointer-events:none;z-index:0;}
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px) saturate(1.5);background:var(--glass);border-bottom:1px solid var(--glass-border);padding:0 28px;}
+    .navbar-inner{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;}
+    .nav-brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:#f1f5f9;text-decoration:none;}
+    .nav-brand .logo{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;}
+    .nav-links{display:flex;align-items:center;gap:6px;}
+    .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;padding:8px 14px;border-radius:10px;transition:all .2s;}
+    .nav-links a:hover,.nav-links a.active{color:#e2e8f0;background:rgba(255,255,255,.06);}
+    .container{max-width:600px;margin:0 auto;padding:40px 28px;position:relative;z-index:1;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+    .card{animation:fadeUp .5s ease both;background:linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,0) 100%),var(--card);border:1px solid var(--glass-border);border-radius:16px;padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.25);}
+    .card h2{font-size:20px;margin-bottom:20px;color:#f1f5f9;}
+    .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .item{padding:14px 16px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(255,255,255,.02);}
+    .k{color:var(--muted);font-size:11px;letter-spacing:.3px;}
+    .v{margin-top:6px;font-size:17px;font-weight:700;}
+    .status-active{color:var(--green);}
+    .status-expired{color:var(--red);}
+    .btn-logout{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:22px;padding:10px 20px;border-radius:12px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#fca5a5;cursor:pointer;text-decoration:none;font-weight:700;font-size:13px;font-family:"Vazir",Tahoma,sans-serif;transition:all .2s ease;}
+    .btn-logout:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.5);}
+    .warn{margin-top:18px;padding:14px 16px;border-radius:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:#fcd34d;font-size:13px;line-height:1.85;}
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="nav-brand" href="/"><span class="logo">B</span> داشبورد بازار</a>
+    <div class="nav-links">
+      <a href="/">داشبورد</a>
+      <a href="/symbol/">تحلیل نماد</a>
+      <a href="/accounts/profile/" class="active">{{ request.user.username }}</a>
+    </div>
+  </div>
+</nav>
+<div class="container">
+  <div class="card">
+    <h2>حساب کاربری</h2>
+    <div class="kv">
+      <div class="item">
+        <div class="k">نام کاربری</div>
+        <div class="v">{{ request.user.username }}</div>
+      </div>
+      <div class="item">
+        <div class="k">روز اعتبار باقی‌مانده</div>
+        <div class="v {% if profile.days_remaining > 0 %}status-active{% else %}status-expired{% endif %}">
+          {{ profile.days_remaining }} روز
+        </div>
+      </div>
+      <div class="item">
+        <div class="k">وضعیت اشتراک</div>
+        <div class="v {% if profile.days_remaining > 0 %}status-active{% else %}status-expired{% endif %}">
+          {% if profile.days_remaining > 0 %}فعال{% else %}غیرفعال{% endif %}
+        </div>
+      </div>
+      <div class="item">
+        <div class="k">تاریخ عضویت</div>
+        <div class="v" style="font-size:14px;">{{ request.user.date_joined|date:"Y/m/d" }}</div>
+      </div>
+    </div>
+    {% if profile.days_remaining == 0 %}
+    <div class="warn">
+      اعتبار شما به پایان رسیده است. برای استفاده از تحلیل نماد، لطفاً با مدیر سایت تماس بگیرید تا اعتبار جدید دریافت کنید.
+    </div>
+    {% endif %}
+    <a class="btn-logout" href="/accounts/logout/">خروج از حساب</a>
+  </div>
+</div>
+</body>
+</html>

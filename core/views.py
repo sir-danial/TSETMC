@@ -2,8 +2,9 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
+
 
 from core.service.analyzer import analyze_symbol
 from core.data_providers.brsapi_provider import (
@@ -11,6 +12,15 @@ from core.data_providers.brsapi_provider import (
     fetch_gold_currency,
     get_symbol_live_by_l18,
 )
+
+
+def _has_subscription(user):
+    """Return True if user is authenticated and has active subscription."""
+    if not user.is_authenticated:
+        return False
+    from accounts.models import UserProfile
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    return profile.is_subscription_active
 
 
 # =====================
@@ -21,6 +31,10 @@ def home_page(request):
 
 
 def symbol_page(request):
+    if not request.user.is_authenticated:
+        return redirect(f"/accounts/login/?next=/symbol/")
+    if not _has_subscription(request.user):
+        return render(request, "core/no_subscription.html")
     symbol = (request.GET.get("symbol") or "").strip()
     return render(request, "core/symbol.html", {"symbol": symbol})
 
@@ -29,6 +43,19 @@ def symbol_page(request):
 # APIs
 # =====================
 def api_analyze(request):
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"error": "login_required", "detail": "ابتدا وارد شوید."},
+            status=401,
+            json_dumps_params={"ensure_ascii": False},
+        )
+    if not _has_subscription(request.user):
+        return JsonResponse(
+            {"error": "no_subscription", "detail": "اعتبار شما به پایان رسیده است."},
+            status=403,
+            json_dumps_params={"ensure_ascii": False},
+        )
+
     symbol = (request.GET.get("symbol") or "").strip()
     if not symbol:
         return JsonResponse(

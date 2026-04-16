@@ -504,6 +504,12 @@
     <div class="nav-links">
       <a href="/">داشبورد</a>
       <a href="/symbol/" class="active">تحلیل نماد</a>
+      {% if user.is_authenticated %}
+      <a href="/accounts/profile/">{{ user.username }}</a>
+      <a href="/accounts/logout/">خروج</a>
+      {% else %}
+      <a href="/accounts/login/">ورود</a>
+      {% endif %}
     </div>
   </div>
 </nav>

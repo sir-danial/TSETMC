@@ -1,0 +1,33 @@
+/* Fix Persian/Arabic letter-spacing in Django Admin */
+*,
+*::before,
+*::after {
+    letter-spacing: 0 !important;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, a, span, td, th, label, input, select, textarea, button, li, div {
+    font-family: "Vazir", Tahoma, "Segoe UI", sans-serif !important;
+    letter-spacing: 0 !important;
+}
+
+#header {
+    font-family: "Vazir", Tahoma, sans-serif !important;
+}
+
+#branding h1 {
+    letter-spacing: 0 !important;
+}
+
+/* Load Vazir font */
+@font-face {
+    font-family: "Vazir";
+    src: url("/static/core/fonts/vazir/Vazir.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazir";
+    src: url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}

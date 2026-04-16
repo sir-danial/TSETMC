@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+@font-face {
+    font-family: "Vazir";
+    src: url("/static/core/fonts/vazir/Vazir.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazir";
+    src: url("/static/core/fonts/vazir/Vazir-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}
+* {
+    letter-spacing: 0 !important;
+    word-spacing: normal !important;
+}
+body {
+    font-family: "Vazir", Tahoma, "Segoe UI", sans-serif !important;
+}
+</style>
+{% endblock %}
