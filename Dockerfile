@@ -5,9 +5,10 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Use Iranian mirrors for apt and pip (Hamravesh has no direct access)
-RUN sed -i 's|deb.debian.org|mirror.arvancloud.ir|g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update && apt-get install -y \
+# Use Iranian mirror for apt (Hamravesh has no direct access)
+RUN sed -i 's|deb.debian.org|repo.ircloud.ir|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get -o Acquire::Check-Valid-Until=false update \
+    && apt-get install -y \
     build-essential \
     libpq-dev \
     ca-certificates \
